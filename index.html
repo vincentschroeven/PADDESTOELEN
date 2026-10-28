@@ -1,0 +1,585 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#121413" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Boswijzer">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Burnot Boswijzer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one narrow column for a phone in the forest; Swiss-style rules instead of cards; Isotype rows carry the forecast, the map carries the place. */
+:root{
+  --bg:#FFFFFF; --fg:#111311; --muted:#555A56; --line:#D9DBD9; --soft:#F2F3F1;
+  --myc:#1F6B47; --sap:#A8782F; --par:#111311; --grey:#A9AEAA; --focus:#2C6E9E;
+  --cond:"IBM Plex Sans Condensed","Arial Narrow",sans-serif;
+  --body:"IBM Plex Sans","Helvetica Neue",Arial,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121413; --fg:#ECEFEC; --muted:#A3A9A5; --line:#2E322F; --soft:#1B1E1C;
+  --myc:#5FB88A; --sap:#D6A65A; --par:#ECEFEC; --grey:#5E635F; --focus:#86AEDB; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121413; --fg:#ECEFEC; --muted:#A3A9A5; --line:#2E322F; --soft:#1B1E1C;
+  --myc:#5FB88A; --sap:#D6A65A; --par:#ECEFEC; --grey:#5E635F; --focus:#86AEDB; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.45}
+.wrap{max-width:560px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 40px;display:flex;flex-direction:column;gap:20px}
+.mono{font-family:var(--mono)}
+.lbl{font:500 11px var(--mono);letter-spacing:.1em;text-transform:uppercase}
+.top{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--fg);padding-bottom:8px}
+nav.tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border:1px solid var(--fg)}
+nav.tabs a{min-height:44px;display:flex;align-items:center;justify-content:center;text-decoration:none;color:var(--fg);font:500 12px var(--mono);letter-spacing:.08em;text-transform:uppercase}
+nav.tabs a+a{border-left:1px solid var(--fg)}
+nav.tabs a[aria-current="page"]{background:var(--fg);color:var(--bg)}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.chip{min-height:36px;padding:0 12px;border:1px solid var(--line);font:500 12px var(--mono)}
+.chip[aria-pressed="true"]{border-color:var(--fg);background:var(--fg);color:var(--bg)}
+input[type=date]{min-height:36px;padding:0 8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font:500 12px var(--mono);border-radius:0}
+.head{display:flex;flex-direction:column;gap:8px}
+.head .row{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+h1{margin:0;font:600 28px/1.1 var(--cond);text-wrap:balance}
+.big{font:500 28px/1.1 var(--cond);white-space:nowrap}
+.say{margin:0;color:var(--muted);max-width:60ch}
+.say b{color:var(--fg);font-weight:500}
+.stripes{display:grid;grid-template-columns:repeat(14,minmax(0,1fr));gap:2px;height:30px}
+.stripes span{display:block}
+.stripes span.fc{background-image:repeating-linear-gradient(135deg,transparent 0 3px,rgba(255,255,255,.55) 3px 5px)}
+.stripe-lbl{display:grid;grid-template-columns:repeat(14,minmax(0,1fr));gap:2px;font:400 10.5px var(--mono);color:var(--muted)}
+.stripe-lbl .wet{border-top:2px solid var(--fg);padding-top:3px;color:var(--fg);text-align:right;font-weight:500}
+.guild{border-top:1px solid var(--fg)}
+.guild>button{width:100%;text-align:left;padding:10px 0 12px;display:flex;flex-direction:column;gap:6px;min-height:44px}
+.guild .gh{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.guild .gn{font:600 18px var(--cond)}
+.guild .gc{font:500 13px var(--mono);font-variant-numeric:tabular-nums}
+.guild .gd{font-size:13px;color:var(--muted)}
+.icons{display:flex;flex-wrap:wrap;gap:4px}
+.icons svg{width:20px;height:20px;display:block}
+.list{display:flex;flex-direction:column;padding-bottom:10px}
+.sp{border-top:1px solid var(--line);padding:10px 0;display:flex;flex-direction:column;gap:4px}
+.sp .n{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.sp .nl{font-weight:600}
+.sp .sci{font-style:italic;color:var(--muted);font-size:13px}
+.tags{display:flex;flex-wrap:wrap;gap:4px 10px}
+.tag{font:500 10.5px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.tag.new{color:var(--myc)}.tag.warn{color:#B3402A}
+.why{margin:0;padding-left:16px;font-size:13px;color:var(--muted)}
+.fact{font-size:13px}
+.note{font-size:12.5px;color:var(--muted);margin:0}
+.legend-row{display:flex;align-items:center;gap:10px;min-height:32px;border-top:1px solid var(--line);font-size:13.5px}
+.legend-row .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.legend-row .c{margin-left:auto;font:500 12px var(--mono);font-variant-numeric:tabular-nums}
+.map{width:100%;height:auto;display:block;background:var(--soft);touch-action:manipulation}
+.pick{min-height:40px;padding:8px 0;font-size:13.5px;border-bottom:1px solid var(--line)}
+footer{border-top:1px solid var(--fg);padding-top:10px;display:flex;flex-direction:column;gap:8px}
+.btn{min-height:44px;padding:0 14px;border:1px solid var(--fg);font:500 12px var(--mono);letter-spacing:.06em;text-transform:uppercase;align-self:flex-start}
+.state{padding:24px 0;color:var(--muted)}
+.always{font-size:13px;color:var(--muted)}
+.field{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--muted)}
+.fields{display:flex;flex-wrap:wrap;gap:12px}
+.fields .field{flex:1 1 140px;min-width:0}
+input[type=time],input[type=text],textarea{min-height:40px;padding:6px 8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font:400 15px var(--body);border-radius:0;width:100%}
+textarea{min-height:70px;resize:vertical}
+.timepair{display:flex;gap:6px}
+.sec{display:flex;flex-direction:column;gap:10px;border-top:1px solid var(--fg);padding-top:10px}
+.sec h2{margin:0;font:600 18px var(--cond)}
+.vs{border-top:1px solid var(--line);padding:8px 0;display:flex;flex-direction:column;gap:8px}
+.vs .h{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.vs .nm{display:flex;gap:8px;align-items:center;min-width:0}
+.vs .nm .sw{width:10px;height:10px;flex-shrink:0}
+.seg{display:grid;grid-template-columns:repeat(2,auto);border:1px solid var(--fg);flex-shrink:0}
+.seg button{min-height:40px;padding:0 10px;font:500 11px var(--mono);letter-spacing:.04em;text-transform:uppercase}
+.seg button+button{border-left:1px solid var(--fg)}
+.seg button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
+.sub{display:flex;flex-direction:column;gap:6px;padding-left:18px}
+.sub .lbl{color:var(--muted)}
+.btn.primary{background:var(--fg);color:var(--bg);align-self:stretch}
+.hist-row{display:flex;justify-content:space-between;gap:8px;border-top:1px solid var(--line);padding:8px 0;font-size:13.5px}
+.hist-row .mono{font-size:12px;font-variant-numeric:tabular-nums;white-space:nowrap}
+
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <div class="top lbl"><span>Burnotvallei · 260 m</span><span id="dateLbl"></span></div>
+  <nav class="tabs" aria-label="Weergave">
+    <a href="#vandaag" id="tab-vandaag">Vandaag</a>
+    <a href="#kaart" id="tab-kaart">Kaart</a>
+    <a href="#bezoek" id="tab-bezoek">Bezoek</a>
+  </nav>
+
+  <p class="state" id="state">Gegevens laden: soorten, vondsten en weer van de vallei.</p>
+
+  <section id="v-vandaag" hidden style="display:flex;flex-direction:column;gap:20px">
+    <div class="chips" role="group" aria-label="Datum">
+      <button class="chip" data-q="today" type="button">Vandaag</button>
+      <button class="chip" data-q="sat" type="button">Zaterdag</button>
+      <button class="chip" data-q="sun" type="button">Zondag</button>
+      <label class="lbl" for="date" style="position:absolute;left:-9999px">Andere datum</label>
+      <input type="date" id="date">
+    </div>
+    <div class="head">
+      <div class="row"><h1 id="verdict"></h1><span class="big" id="count"></span></div>
+      <p class="say" id="say"></p>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div class="stripes" id="stripes" role="img"></div>
+      <div class="stripe-lbl" id="stripeLbl"></div>
+    </div>
+    <div id="guilds"></div>
+    <p class="always" id="always"></p>
+  </section>
+
+  <section id="v-kaart" hidden style="display:flex;flex-direction:column;gap:16px">
+    <div class="head"><div class="row"><h1 id="mapTitle"></h1><span class="mono note" id="mapSub"></span></div></div>
+    <div class="chips" role="group" aria-label="Periode">
+      <button class="chip" id="mAll" type="button">Alle jaren</button>
+      <button class="chip" id="mSeason" type="button"></button>
+    </div>
+    <svg class="map" id="map" role="img" aria-label="Kaart van de Burnotvallei met Route 1 en je vindplaatsen per leefwijze"></svg>
+    <div class="pick" id="pick">Tik een stip voor soort en datum.</div>
+    <div id="legend"></div>
+    <p class="note">Zwarte lijn: Route 1. Grijze lijnen: je gelogde wandelingen met GPX. Water, bomen en herkenningspunten volgen zodra je ze markeert.</p>
+  </section>
+
+  <section id="v-bezoek" hidden style="display:flex;flex-direction:column;gap:18px">
+    <div class="head"><div class="row"><h1>Bezoek loggen</h1><span class="mono note" id="vProg"></span></div>
+      <p class="say">Elke wandeling telt, ook een lege. Een "niet gezien" toetst de verwachting net zo goed als een vondst.</p></div>
+    <div class="sec">
+      <div class="fields">
+        <label class="field" for="vDatum">Datum<input type="date" id="vDatum"></label>
+      </div>
+      <div class="fields">
+        <label class="field" for="vStart">Start<span class="timepair"><input type="time" id="vStart"><button type="button" class="chip" data-now="vStart">Nu</button></span></label>
+        <label class="field" for="vEind">Einde<span class="timepair"><input type="time" id="vEind"><button type="button" class="chip" data-now="vEind">Nu</button></span></label>
+      </div>
+      <p class="note">De GPX uit Strava stuur je later samen met je export naar Claude, die het spoor koppelt op datum en uur.</p>
+      <div class="field">Bodem<div class="chips" id="vBodem"></div></div>
+      <div class="field">Weer nu<div class="chips" id="vWeer"></div></div>
+    </div>
+    <div class="sec">
+      <h2>Verwachte soorten</h2>
+      <p class="note">De soorten die de app voor deze dag verwacht. Antwoord per soort; bij gezien kan je stadium, aantal en zone aanduiden.</p>
+      <div id="vList"></div>
+      <button type="button" class="btn" id="vRest">Overige: niet gezien</button>
+    </div>
+    <div class="sec">
+      <h2>Verder</h2>
+      <label class="field" for="vExtra">Andere soorten<textarea id="vExtra" placeholder="bv. parelstuifzwammen, veel en rijp"></textarea></label>
+      <label class="field" for="vNotitie">Notitie<textarea id="vNotitie" placeholder="Microhabitat, primordia, vraatsporen…"></textarea></label>
+      <p class="note" id="vMsg" aria-live="polite"></p>
+      <button type="button" class="btn primary" id="vSave">Bezoek opslaan</button>
+    </div>
+    <div class="sec">
+      <h2>Laatste bezoeken</h2>
+      <div id="vHist"><p class="note">Opgeslagen bezoeken verschijnen hier.</p></div>
+      <p class="note" id="vCount"></p>
+      <div class="chips">
+        <button type="button" class="btn" id="vExport">Exporteer voor Claude</button>
+        <label class="btn" for="vImport" style="display:flex;align-items:center;cursor:pointer">Importeer bestand</label>
+        <input type="file" id="vImport" accept=".json,application/json" style="position:absolute;left:-9999px">
+      </div>
+      <p class="note">Je bezoeken staan op deze telefoon. Exporteer en stuur het bestand naar Claude; met Importeer laad je een door Claude aangevulde versie terug.</p>
+    </div>
+  </section>
+
+  <footer id="foot" hidden>
+    <p class="note" id="wxInfo"></p>
+    <button class="btn" type="button" id="wxBtn">Weer vernieuwen</button>
+    <p class="note" id="wxMsg" aria-live="polite"></p>
+  </footer>
+</div>
+
+<script>
+(function(){
+const MN=['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
+const DAY=86400000;
+const iso=d=>d.toISOString().slice(0,10);
+const parse=s=>new Date(s+'T00:00:00Z');
+const fmtD=d=>`${d.getUTCDate()} ${MN[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
+const fmtS=d=>`${d.getUTCDate()} ${MN[d.getUTCMonth()]}`;
+const nf=(x,n=1)=>x==null||isNaN(x)?'–':x.toFixed(n).replace('.',',');
+const $=id=>document.getElementById(id);
+const KEYS=['rain','t','tmin','tsoil','sm'];
+let TRACKS=[], W=null, SP=[], FINDS=null, ROUTE=[], sel=null, mapSeason=false, open={};
+
+function win(arr,i,n){const a=[];for(let j=i-n+1;j<=i;j++){if(j<0||arr[j]==null)return null;a.push(arr[j])}return a}
+const mean=a=>a?a.reduce((x,y)=>x+y,0)/a.length:null;
+const sum=a=>a?a.reduce((x,y)=>x+y,0):null;
+function features(i){
+  const f={rain14:sum(win(W.rain,i,14)),r30:mean(win(W.rain,i,30)),r30lag:mean(win(W.rain,i-5,30)),t7:mean(win(W.t,i,7)),t20:mean(win(W.t,i,20)),sm7:mean(win(W.sm,i,7)),sm:W.sm[i],tsoil7:mean(win(W.tsoil,i,7))};
+  let wet=0; for(let j=i;j>=0&&W.sm[j]!=null&&W.sm[j]>=0.34;j--) wet++; f.wetRun=wet;
+  let frost=0; for(let j=i-6;j<=i;j++) if(W.tmin[j]!=null&&W.tmin[j]<0) frost++; f.frost7=frost;
+  let soak=null; for(let j=i;j>=Math.max(2,i-45);j--){const s=W.rain[j]+W.rain[j-1]+W.rain[j-2]; if(s>=15){soak=i-j;break}} f.soakAgo=soak;
+  return f;
+}
+// ---- season value at date (interpolated around mid-month)
+function seasonAt(s,d){
+  const m=d.getUTCMonth(), day=d.getUTCDate();
+  const dim=new Date(Date.UTC(d.getUTCFullYear(),m+1,0)).getUTCDate();
+  const pos=(day-0.5)/dim-0.5; // -0.5..0.5
+  const other=pos<0?(m+11)%12:(m+1)%12;
+  const a=Math.abs(pos);
+  return s.season[m]*(1-a)+s.season[other]*a;
+}
+// ---- scoring
+function score(s,d,f){
+  const m=d.getUTCMonth()+1;
+  let base=seasonAt(s,d); const why=[]; let fac=1;
+  const own=s.own.includes(m);
+  if(own){base=Math.min(1,base*1.15+0.05); why.push(`Jij vond hem eerder in ${MN[m-1]}.`)}
+  if(base>=0.6) why.push(`In België volop seizoen (${MN[m-1]}).`); else if(base>=0.3) why.push(`In België begin of eind van het seizoen.`);
+  const soil=['mycorrhiza','strooisel','parasiet'].includes(s.g);
+  if(s.prof){
+    const p=s.prof;
+    if(f.t7<p.t7lo-2) {fac*=0.45; why.push(`Kouder dan bij al je vondsten (7-daagse temp. ${nf(f.t7)} °C, jij: ${nf(p.t7lo)}–${nf(p.t7hi)} °C).`)}
+    else if(f.t7>p.t7hi+2){fac*=0.45; why.push(`Warmer dan bij al je vondsten (7-daagse temp. ${nf(f.t7)} °C, jij: ${nf(p.t7lo)}–${nf(p.t7hi)} °C).`)}
+    else why.push(`Temperatuur past bij jouw vondsten (${nf(p.t7lo)}–${nf(p.t7hi)} °C).`);
+    if(soil&&f.sm7<p.smlo-0.02){fac*=0.4; why.push(`Bodem droger dan bij al je vondsten (${nf(f.sm7,2)} tegen minstens ${nf(p.smlo,2)}).`)}
+  } else {
+    if(soil&&f.sm7<0.22){fac*=0.5; why.push(`Bodem vrij droog (${nf(f.sm7,2)}).`)}
+  }
+  if(s.g==='hout'&&f.sm7<0.15){fac*=0.7}
+  const n=s.sci;
+  if(['Clitocybe nebularis','Lepista nuda','Lepista flaccida','Hydnum repandum'].includes(n)){
+    const h=n==='Hydnum repandum'?'H3':'H1';
+    if(f.wetRun<7){fac*=0.35;
+      const eta=f.wetRun>0?`Bodem pas ${f.wetRun} dag${f.wetRun>1?'en':''} nat; verwacht 1–2 weken na natte bodem, rond ${fmtD(new Date(d.getTime()+(7-f.wetRun)*DAY))} – ${fmtD(new Date(d.getTime()+(14-f.wetRun)*DAY))}.`:`Bodem nog niet nat (≥0,34). Verwacht 1–2 weken nadat dat gebeurt.`;
+      why.push(`${h}: ${eta}`);}
+    else {fac*=1.2; why.push(`${h}: bodem al ${f.wetRun} dagen nat — venster open.`)}
+  }
+  if(n==='Boletus edulis'){
+    const okT=f.t20>=10&&f.t20<=15.5, okR=f.r30lag>=2;
+    if(okT&&okR){fac*=1.3; why.push(`H5a: 20-daagse temp. ${nf(f.t20)} °C en ${nf(f.r30lag)} mm/dag in de 30 dagen tot 5 dagen geleden — venster open.`)}
+    else {fac*=0.25; why.push(`H5a: ${!okT?`20-daagse temp. ${nf(f.t20)} °C (nodig 10–15 °C)`:''}${!okT&&!okR?'; ':''}${!okR?`regen ${nf(f.r30lag)} mm/dag in de 30 dagen tot 5 dagen geleden (nodig ±2+; regen werkt met vertraging)`:''}.`)}
+  }
+  if(n==='Boletus reticulatus'){
+    if(f.t20>=15&&f.r30lag>=1.5){fac*=1.2; why.push(`H5b: warm (${nf(f.t20)} °C) en genoeg regen — zomervorm kan.`)}
+    else {fac*=0.4; why.push(`H5b: zomereekhoorntjesbrood wil warmte (20-daagse temp. ≥15 °C) én regen.`)}
+  }
+  if(n==='Exidiopsis effusa'){
+    if(f.frost7>0&&f.sm>=0.35){fac*=1.5; why.push(`H9: vorstnacht en natte takken — kijk 's ochtends naar haarijs op dood loofhout.`)}
+    else {fac*=0.5; why.push(`H9: haarijs vraagt een nacht net onder 0 °C na nat weer.`)}
+  }
+  if(n==='Flammulina velutipes'&&f.frost7>0){fac*=1.2; why.push('H9: fluweelpootje verdraagt vorst en verschijnt vaak juist dan.')}
+  if(n==='Laetiporus sulphureus') why.push('H10: vooral voorjaar (apr–mei), soms opnieuw in warme nazomers.');
+  if(n==='Hypomyces chrysospermus'){ if(f.t7>=14&&f.rain14>=10){fac*=1.2; why.push('H7: warm na regen — kijk naar wit/geel aangetaste fluweelboleten.')} }
+  if(n==='Leccinellum pseudoscabrum') why.push('H6: onder haagbeuk, kort na zomerregen.');
+  if(['Pleurotus pulmonarius','Pleurotus ostreatus'].includes(n)) why.push(n==='Pleurotus pulmonarius'?'H4: zomervorm, houdt van warmte.':'H4: wintervorm, vaak na de eerste koude.');
+  if(['Hypholoma fasciculare','Armillaria mellea','Armillaria ostoyae'].includes(n)&&m>=3&&m<=5) why.push('H11: lentevruchtlichamen mogelijk na een zachte winter.');
+  if(['Coprinellus micaceus','Coprinellus disseminatus','Mycena galericulata','Pluteus cervinus'].includes(n)&&f.soakAgo!=null&&f.soakAgo<=4){fac*=1.25; why.push(`Snelle reageerder: ${f.soakAgo===0?'vandaag':f.soakAgo+' dag'+(f.soakAgo>1?'en':'')+' geleden'} viel ≥15 mm in 3 dagen.`)}
+  if(n==='Russula nigricans') why.push('Gastheer: noteer de plek. Over 2\u20134 weken, bij vochtig weer, staan hier mogelijk de zwamgasten.');
+  if(n==='Dendrocollybia racemosa') why.push('Zeldzaam. Kijk tussen mos en blad aan de voet van Grofplaatrussula\u2019s, tegelijk met de nieuwe flush.');
+  if(['Asterophora lycoperdoides','Asterophora parasitica'].includes(n)) why.push('Volgt 2\u20134 weken op de Grofplaatrussula: zoek op oude, zwarte, ingezakte exemplaren.');
+  if(s.est) why.push('Seizoen geschat uit literatuur (nog geen Belgische maanddata).');
+  const final=Math.min(1,base*fac);
+  return {s,base,final,why,own};
+}
+
+
+const EAT={ // k: 'ja' = bekende eetbare soort, 'voorw' = eetbaar met voorwaarden/ervaring
+ 'Boletus edulis':{k:'ja',n:'Uitstekend.',l:'Galboleet (bitter, roze buisjes, donker net op steel).'},
+ 'Boletus reticulatus':{k:'ja',n:'Uitstekend.',l:'Galboleet (bitter, roze buisjes).'},
+ 'Cantharellus cibarius':{k:'ja',n:'Uitstekend.',l:'Valse hanenkam (echte plaatjes, feloranje, zacht vlees).'},
+ 'Cantharellus tubaeformis':{k:'ja',n:'Goed, ook laat in het jaar.',l:'Kleine bruine trechterzwammen; controleer de lijsten onder de hoed.'},
+ 'Hydnum repandum':{k:'ja',n:'Goed; stekels i.p.v. plaatjes, weinig verwarring.',l:'Weinig gevaarlijke dubbelgangers.'},
+ 'Macrolepiota procera':{k:'ja',n:'Goed (alleen de hoed).',l:'Kleine parasolzwammen (Lepiota, dodelijk) en knolparasolzwam; alleen exemplaren >10 cm met verschuifbare ring en geslangde steel.'},
+ 'Pleurotus ostreatus':{k:'ja',n:'Goed, goed bakken.',l:'Weinig gevaarlijke dubbelgangers op hout.'},
+ 'Pleurotus pulmonarius':{k:'ja',n:'Goed, goed bakken.',l:'Weinig gevaarlijke dubbelgangers op hout.'},
+ 'Leccinellum pseudoscabrum':{k:'ja',n:'Goed, goed bakken (wordt zwart).',l:'Andere ruwsteelboleten; weinig gevaar.'},
+ 'Flammulina velutipes':{k:'voorw',n:'Eetbaar, alleen de hoeden.',l:'Bundelmosklokje (Galerina marginata, dodelijk): heeft een ring en roestbruine sporen. Fluweelpootje heeft een donkere fluwelen steel zonder ring en witte sporen.'},
+ 'Armillaria mellea':{k:'voorw',n:'Alleen jong en lang gebakken; niet iedereen verdraagt het.',l:'Gewone zwavelkop (giftig, groengele plaatjes) en bundelmosklokje (dodelijk).'},
+ 'Armillaria ostoyae':{k:'voorw',n:'Alleen jong en lang gebakken; niet iedereen verdraagt het.',l:'Gewone zwavelkop (giftig) en bundelmosklokje (dodelijk).'},
+ 'Laetiporus sulphureus':{k:'voorw',n:'Alleen jonge, zachte randen, goed gebakken. Sommige mensen reageren erop; niet van taxus.',l:'Weinig dubbelgangers.'},
+ 'Leccinum versipelle':{k:'voorw',n:'Alleen goed gebakken; rauw of te kort gebakken geeft klachten.',l:'Andere oranje ruwsteelboleten.'},
+ 'Clitopilus prunulus':{k:'voorw',n:'Alleen voor ervaren zoekers.',l:'Witte trechterzwammen (Clitocybe rivulosa/candicans), giftig. Let op meelgeur en roze sporen.'},
+ 'Lepista nuda':{k:'voorw',n:'Alleen gebakken, nooit rauw.',l:'Paarse gordijnzwammen (Cortinarius): roestbruine sporen en spinnenwebvlies.'},
+ 'Hymenopellis radicata':{k:'voorw',n:'Eetbaar (hoed), weinig smaak.',l:'Weinig gevaar door de lange wortelende steel.'},
+ 'Oudemansiella mucida':{k:'voorw',n:'Eetbaar na verwijderen van het slijm; weinig smaak.',l:'Weinig dubbelgangers.'},
+ 'Russula cyanoxantha':{k:'voorw',n:'Eetbaar; plaatjes buigzaam (niet brokkelig).',l:'Andere russula\'s: proef een klein stukje en spuw uit; scherp = laten staan.'},
+ 'Meripilus giganteus':{k:'voorw',n:'Alleen jonge, zachte randen; zwart verkleurend, matige smaak.',l:'Weinig gevaarlijke dubbelgangers.'},
+ 'Polyporus squamosus':{k:'voorw',n:'Alleen heel jong, zacht.',l:'Weinig gevaarlijke dubbelgangers.'},
+ 'Lycoperdon pyriforme':{k:'voorw',n:'Alleen jong en vanbinnen helemaal wit en egaal.',l:'Eitjes van amanieten (doorsnijden: geen hoed- of plaatjessilhouet zichtbaar).'},
+ 'Coprinellus micaceus':{k:'voorw',n:'Eetbaar maar klein en snel vervloeiend.',l:'Andere kleine inktzwammen.'},
+ 'Infundibulicybe gibba':{k:'voorw',n:'Eetbaar, alleen voor ervaren zoekers.',l:'Giftige witte trechterzwammen.'}
+};
+const FACTS={"Amanita muscaria": "De witte stippen zijn resten van het vlies dat de jonge paddenstoel omhulde. Na een flinke bui kunnen ze wegspoelen.", "Amanita phalloides": "Verantwoordelijk voor het grootste deel van de dodelijke paddenstoelvergiftigingen in Europa. Klachten komen pas 6 tot 24 uur na het eten.", "Amanita rubescens": "Beschadigd vlees en vraatgangen kleuren langzaam roodachtig; daar komt de naam rubescens vandaan.", "Armillaria mellea": "Onder losse schors vind je zwarte, veterachtige strengen (rizomorfen) waarmee de schimmel zich van boom tot boom verplaatst.", "Armillaria ostoyae": "Een exemplaar in Oregon beslaat zo’n 9 km² en hoort bij de grootste organismen op aarde.", "Boletus edulis": "In tien jaar monitoring bij Bielefeld verscheen hij vooral bij een 20-daagse gemiddelde temperatuur van 10–15 °C na een maand met ±2–4 mm regen per dag.", "Boletus reticulatus": "Het fijne witte netwerk loopt over bijna de hele steel; bij gewoon eekhoorntjesbrood zit het vooral bovenaan.", "Cantharellus cibarius": "Geen echte plaatjes maar stompe, vertakte lijsten die doorlopen op de steel. Ruikt vaak naar abrikoos.", "Chlorophyllum rhacodes": "Het vlees kleurt bij doorsnijden snel oranjerood. Dat is het snelste verschil met de grote parasolzwam.", "Clitocybe nebularis": "Staat vaak in heksenkringen in bladstrooisel en heeft een sterke, wat zoetige geur die je soms ruikt voor je hem ziet.", "Coprinellus disseminatus": "Verschijnt met honderden tegelijk op stronken, maar vervloeit, anders dan de meeste inktzwammen, niet tot inkt.", "Coprinellus micaceus": "De glinsterende korreltjes op de hoed zijn resten van het velum. Ze verdwijnen bij regen.", "Coprinopsis lagopus": "Komt ’s nachts op en is in de loop van de dag al vergaan. Vroeg kijken loont.", "Exidiopsis effusa": "De schimmel zelf zie je nauwelijks. Hij remt de hergroei van ijskristallen, waardoor het ijs in haarfijne lokken uit dood hout groeit.", "Flammulina velutipes": "Verdraagt vorst en ontdooit gewoon verder. De gekweekte enoki is dezelfde soort, in het donker opgekweekt.", "Hydnum repandum": "Stekels in plaats van plaatjes. Hij leeft met bomen, de nevelzwam van strooisel, maar toch verschijnen ze vaak samen.", "Hygrophoropsis aurantiaca": "Leeft van strooisel en hout, niet met bomen. Veel valse hanenkammen zeggen dus niets over echte hanenkammen in de buurt.", "Hypholoma fasciculare": "Bitter van smaak. In het VK verschijnt hij sinds de opwarming ook vaker in de lente.", "Hypomyces chrysospermus": "Geen paddenstoel maar een schimmel die boleten overwoekert: eerst wit, daarna goudgeel door de sporen.", "Laccaria laccata": "Zo variabel van kleur en vorm dat hij zelfs ervaren zoekers foppt. Vandaar de naam.", "Lactifluus vellereus": "Kan, net als de Grofplaatrussula, gastheer zijn voor de Plaatjeszwamgast. Rottende exemplaren zijn het bekijken waard.", "Laetiporus sulphureus": "Veroorzaakt bruinrot: het hout brokkelt uiteindelijk in kubusjes uiteen.", "Leccinellum pseudoscabrum": "Het vlees kleurt bij doorsnijden eerst roze en dan grijszwart. In de pan wordt hij zwart.", "Macrolepiota procera": "De ring is dubbel en schuift los over de steel; de steel heeft een slangenhuidpatroon.", "Meripilus giganteus": "Groeit aan de voet van beuken en kan een meter breed worden. Hij wijst op wortelrot in de boom.", "Mutinus caninus": "Het groene slijm aan de top stinkt naar aas en lokt vliegen, die de sporen meenemen.", "Oudemansiella mucida": "Maakt mucidine, een stof die andere schimmels remt en die model stond voor moderne landbouwfungiciden.", "Paxillus involutus": "Gold lang als eetbaar. Herhaald eten kan een afweerreactie uitlokken die rode bloedcellen afbreekt, soms dodelijk.", "Pleurotus ostreatus": "Vangt aaltjes: de schimmeldraden verlammen ze en verteren ze als extra stikstofbron.", "Polyporus squamosus": "Ruikt naar komkommer of watermeloenschil.", "Russula cyanoxantha": "Bijna alle russula’s hebben brokkelige plaatjes; deze heeft buigzame plaatjes die niet breken.", "Xerocomus chrysenteron": "Roze tot rood in de barsten van de hoedhuid en vaak rood vlees onderaan de steel.", "Lycoperdon pyriforme": "Een van de weinige stuifzwammen die op (vaak begraven) hout groeit, in dichte groepen.", "Russula nigricans": "Jong bijna wit, oud vrijwel zwart. Beschadigd vlees wordt eerst rood en dan zwart; de plaatjes staan dik en ver uit elkaar. De zwarte resten zijn gastheer voor drie bijzondere soorten.", "Dendrocollybia racemosa": "Lijkt eerder een miniatuurboompje dan een paddenstoel. Op de zijtakjes vormt hij ongeslachtelijke sporen, en onderaan de steel zit een donker knolletje (sclerotium) met reservestoffen.", "Asterophora lycoperdoides": "Begint als een wit paddenstoeltje; de hoed raakt daarna bedekt met bruin poeder van ongeslachtelijke sporen. Oude gastheren kunnen met tientallen bezaaid zijn.", "Asterophora parasitica": "Lijkt een gewoon klein plaatjeszwammetje en wordt daarom vaak gemist. Het substraat verraadt hem: een zwarte, rottende russula of melkzwam.", "Fomes fomentarius": "Ötzi, de ijsman van 5300 jaar oud, had tonderzwam bij zich om vuur te maken.", "Piptoporus betulinus": "Ook Ötzi droeg stukjes berkenzwam bij zich, mogelijk als medicijn.", "Fuligo septica": "Geen schimmel maar een slijmzwam: een eencellig organisme dat langzaam over hout en mos kan kruipen.", "Xylaria hypoxylon": "Het witte poeder aan de toppen bestaat uit ongeslachtelijke sporen; later worden de takjes zwart."};
+const TOXIC_NEAR=['Amanita phalloides','Amanita muscaria','Hypholoma fasciculare','Paxillus involutus','Lactarius pubescens','Amanita excelsa'];
+
+
+const GUILD={mycorrhiza:'m',hout:'s',strooisel:'s',parasiet:'p'};
+const GINFO={
+  m:{naam:'Mycorrhiza',uitleg:'Leeft samen met bomen. Komt meestal pas 1 à 2 weken na een natte periode.',col:'var(--myc)'},
+  s:{naam:'Saprotroof',uitleg:'Ruimt blad, takken en stronken op. Reageert snel op regen.',col:'var(--sap)'},
+  p:{naam:'Parasiet',uitleg:'Op levende bomen of op andere paddenstoelen.',col:'var(--par)'}
+};
+const lastDate=()=>new Date(W.start.getTime()+(W.rain.length-1)*DAY);
+const idx=d=>Math.round((d-W.start)/DAY);
+function localToday(){const t=new Date();return new Date(Date.UTC(t.getFullYear(),t.getMonth(),t.getDate()))}
+function nextDow(dow){const t=localToday();const diff=(dow-t.getUTCDay()+7)%7||7;return new Date(t.getTime()+diff*DAY)}
+function icon(col,filled){
+  return `<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 8 A6.5 5.6 0 0 1 14.5 8 Z" fill="${filled?col:'none'}" stroke="${col}" stroke-width="${filled?0:1.3}"/><rect x="${filled?6.5:6.9}" y="8" width="${filled?3:2.2}" height="6.5" fill="${filled?col:'none'}" stroke="${col}" stroke-width="${filled?0:1.3}"/></svg>`;
+}
+function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+
+// ---------- Vandaag
+function renderToday(){
+  const d=parse($('date').value); const i=idx(d);
+  $('dateLbl').textContent=d.toLocaleDateString('nl-BE',{weekday:'short',day:'numeric',month:'short',timeZone:'UTC'});
+  document.querySelectorAll('[data-q]').forEach(b=>b.setAttribute('aria-pressed',String(iso(qDate(b.dataset.q))===$('date').value)));
+  if(i<30||i>W.rain.length-1){
+    $('verdict').textContent='Geen weer voor deze dag';$('count').textContent='';
+    $('say').textContent=`Er zijn weergegevens tot ${fmtD(lastDate())}. Werk het weer onderaan bij, of kies een eerdere datum.`;
+    $('stripes').replaceChildren();$('stripeLbl').replaceChildren();$('guilds').replaceChildren();$('always').textContent='';return;
+  }
+  const f=features(i);
+  const res=SP.filter(s=>s.g!=='overjarig').map(s=>score(s,d,f));
+  const high=res.filter(r=>r.final>=0.5), mid=res.filter(r=>r.final>=0.22&&r.final<0.5);
+  const v=high.length>=15?'hoog':high.length>=6?'matig':'laag';
+  $('verdict').textContent='Verwachting: '+v;
+  $('count').textContent=(high.length+mid.length)+' soorten';
+  const parts=[];
+  if(f.wetRun>0) parts.push(`Bodemvocht ligt <b>${f.wetRun} dag${f.wetRun>1?'en':''}</b> boven de drempel (0,34). Mycorrhizasoorten volgen meestal 5 tot 10 dagen later.`);
+  else parts.push(`Bodemvocht ligt onder de drempel (${nf(f.sm,2)} tegen 0,34). Weinig nieuwe bodemsoorten.`);
+  if(f.soakAgo!=null&&f.soakAgo<=4) parts.push(`${f.soakAgo===0?'Vandaag':f.soakAgo+' dag'+(f.soakAgo>1?'en':'')+' geleden'} viel minstens 15 mm in 3 dagen: snelle opruimers komen nu op.`);
+  if(f.frost7>0) parts.push(`${f.frost7} vorstnacht${f.frost7>1?'en':''} in de laatste week.`);
+  parts.push(`Gemiddeld ${nf(f.t7)} °C de laatste 7 dagen.`);
+  $('say').innerHTML=parts.join(' ');
+  // stripes
+  const st=$('stripes'); st.replaceChildren(); const lb=$('stripeLbl'); lb.replaceChildren();
+  const lo=[214,196,160], hi=[24,92,60]; let wetFrom=-1;
+  for(let k=13;k>=0;k--){const j=i-k; const s=W.sm[j]; const t=s==null?0:Math.max(0,Math.min(1,(s-0.26)/(0.42-0.26)));
+    const c=lo.map((a,n)=>Math.round(a+(hi[n]-a)*t)); const sp=document.createElement('span'); sp.style.background=`rgb(${c})`;
+    if(parse(iso(new Date(W.start.getTime()+j*DAY)))>=W.fcFrom) sp.className='fc';
+    sp.title=`${fmtS(new Date(W.start.getTime()+j*DAY))}: ${nf(s,2)}`; st.append(sp); if(s!=null&&s>=0.34&&wetFrom<0&&13-k>=14-f.wetRun) wetFrom=13-k;}
+  st.setAttribute('aria-label',`Bodemvocht van ${fmtS(new Date(d.getTime()-13*DAY))} tot ${fmtS(d)}, van droog naar nat`);
+  const run=Math.min(14,f.wetRun);
+  const a=document.createElement('span'); a.style.gridColumn=`span ${14-run||14}`; a.textContent=`${fmtS(new Date(d.getTime()-13*DAY))} · bodemvocht${W.fcFrom<=d?' · gearceerd = verwachting':''}`; lb.append(a);
+  if(run>0&&run<14){const b=document.createElement('span');b.className='wet';b.style.gridColumn=`span ${run}`;b.textContent=`${run} d nat`;lb.append(b)}
+  // guild rows
+  const g=$('guilds'); g.replaceChildren();
+  for(const k of ['m','s','p']){
+    const H=high.filter(r=>GUILD[r.s.g]===k).sort((a,b)=>b.final-a.final), M=mid.filter(r=>GUILD[r.s.g]===k).sort((a,b)=>b.final-a.final);
+    const info=GINFO[k]; const box=document.createElement('div'); box.className='guild';
+    const id='list-'+k;
+    box.innerHTML=`<button type="button" aria-expanded="${!!open[k]}" aria-controls="${id}"><span class="gh"><span class="gn">${info.naam}</span><span class="gc">${H.length}${M.length?' + '+M.length:''}</span></span><span class="gd">${info.uitleg}</span><span class="icons">${H.map(()=>icon(info.col,true)).join('')}${M.map(()=>icon(info.col,false)).join('')}</span></button>`;
+    const list=document.createElement('div'); list.className='list'; list.id=id; list.hidden=!open[k];
+    for(const r of [...H,...M]) list.append(spRow(r));
+    if(!H.length&&!M.length){const p=document.createElement('p');p.className='note';p.textContent='Nu niets verwacht in deze groep.';list.append(p)}
+    box.querySelector('button').addEventListener('click',e=>{open[k]=!open[k];list.hidden=!open[k];e.currentTarget.setAttribute('aria-expanded',String(!!open[k]))});
+    box.append(list); g.append(box);
+  }
+  const al=SP.filter(s=>s.g==='overjarig');
+  $('always').textContent=al.length?`Gevuld icoon = goede kans, open icoon = misschien. Daarnaast staan ${al.length} overjarige houtzwammen het hele jaar, zoals ${al.slice(0,2).map(s=>s.nl.toLowerCase()).join(' en ')}.`:'Gevuld icoon = goede kans, open icoon = misschien.';
+}
+function spRow(r){
+  const s=r.s, el=document.createElement('div'); el.className='sp';
+  const tags=[]; if(!s.own.length) tags.push('<span class="tag new">Nieuw voor jou</span>'); else tags.push(`<span class="tag">Jij: ${s.own.map(m=>MN[m-1]).join(', ')}</span>`);
+  if(r.final<0.5) tags.push('<span class="tag">Misschien</span>');
+  const e=EAT[s.sci]; if(e) tags.push(`<span class="tag">${e.k==='ja'?'Eetbaar':'Eetbaar met kennis'}</span>`);
+  if(TOXIC_NEAR.includes(s.sci)||s.tox) tags.push(`<span class="tag warn">${esc(s.tox||'Giftig')}</span>`);
+  const why=r.why.slice(0,3).map(w=>`<li>${esc(w)}</li>`).join('');
+  el.innerHTML=`<div class="n"><span class="nl">${esc(s.nl)}</span></div><span class="sci">${esc(s.sci)}</span><div class="tags">${tags.join('')}</div>${why?`<ul class="why">${why}</ul>`:''}${FACTS[s.sci]?`<span class="fact">${esc(FACTS[s.sci])}</span>`:''}${e&&e.l?`<span class="note">Let op: ${esc(e.l)}</span>`:''}`;
+  return el;
+}
+function qDate(q){return q==='today'?localToday():q==='sat'?nextDow(6):nextDow(0)}
+
+// ---------- Kaart
+const KCOL={m:'var(--myc)',s:'var(--sap)',p:'var(--par)',o:'var(--grey)'};
+const KNAAM={m:'Mycorrhiza',s:'Saprotroof',p:'Parasiet',o:'Onbepaald of slijmzwam'};
+function renderMap(){
+  const b=FINDS.bbox, kx=Math.cos(50.356*Math.PI/180), Wd=350, sx=Wd/((b.e-b.w)*kx), Hd=Math.round((b.n-b.s)*sx);
+  const P=(la,lo)=>[((lo-b.w)*kx*sx).toFixed(1),((b.n-la)*sx).toFixed(1)];
+  const d=parse($('date').value); const m=d.getUTCMonth(); const ms=[m,(m+1)%12];
+  $('mSeason').textContent=`${MN[ms[0]]}–${MN[ms[1]]}`;
+  $('mAll').setAttribute('aria-pressed',String(!mapSeason)); $('mSeason').setAttribute('aria-pressed',String(mapSeason));
+  const L=FINDS.list.filter(f=>!mapSeason||ms.includes(+f[2].slice(5,7)-1));
+  const order={o:0,s:1,p:2,m:3};
+  const pts=L.map((f,n)=>({f,n})).sort((a,c)=>order[a.f[5]]-order[c.f[5]]);
+  const svg=$('map'); svg.setAttribute('viewBox',`0 0 ${Wd} ${Hd}`);
+  const route=ROUTE.map(p=>P(p[0],p[1]).join(',')).join(' ');
+  const mPerPx=((b.e-b.w)*111320*kx)/Wd; const bar=100/mPerPx;
+  const tracks=TRACKS.map(t=>`<polyline points="${t.pts.map(p=>P(p[0],p[1]).join(',')).join(' ')}" fill="none" stroke="var(--grey)" stroke-width="1.2" stroke-linejoin="round"/>`).join('');
+  svg.innerHTML=tracks+`<polyline points="${route}" fill="none" stroke="var(--fg)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`+
+    pts.map(({f})=>{const [x,y]=P(f[0],f[1]);return `<circle cx="${x}" cy="${y}" r="${f[5]==='o'?2.2:3}" fill="${KCOL[f[5]]}" data-k="${esc(f[3])}|${esc(f[2])}"/>`}).join('')+
+    `<line x1="12" y1="${Hd-12}" x2="${(12+bar).toFixed(1)}" y2="${Hd-12}" stroke="var(--fg)" stroke-width="2"/><text x="${(16+bar).toFixed(1)}" y="${Hd-9}" font-family="IBM Plex Mono, monospace" font-size="9" fill="var(--fg)">100 m</text>`+
+    `<text x="${Wd-14}" y="16" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="var(--fg)">N</text><line x1="${Wd-14}" y1="20" x2="${Wd-14}" y2="32" stroke="var(--fg)" stroke-width="1.5"/>`;
+  const years=[...new Set(FINDS.list.map(f=>f[2].slice(0,4)))].sort();
+  $('mapTitle').textContent=`${L.length} vondsten`;
+  $('mapSub').textContent=mapSeason?`${MN[ms[0]]} en ${MN[ms[1]]}, alle jaren`:`${years[0]}–${years[years.length-1]}`;
+  const lg=$('legend'); lg.replaceChildren();
+  for(const k of ['m','s','p','o']){const n=L.filter(f=>f[5]===k).length; const r=document.createElement('div'); r.className='legend-row'; r.innerHTML=`<span class="dot" style="background:${KCOL[k]}"></span><span>${KNAAM[k]}</span><span class="c">${n}</span>`; lg.append(r)}
+}
+$('map').addEventListener('click',e=>{const c=e.target.closest('circle'); if(!c) return; const [n,dt]=c.dataset.k.split('|'); $('pick').textContent=`${n} · ${fmtD(parse(dt))}`;});
+$('mAll').addEventListener('click',()=>{mapSeason=false;renderMap()});
+$('mSeason').addEventListener('click',()=>{mapSeason=true;renderMap()});
+
+// ---------- weer bijwerken
+const FC_URL='https://api.open-meteo.com/v1/forecast?latitude=50.355&longitude=4.845&daily=precipitation_sum,temperature_2m_mean,temperature_2m_min,soil_temperature_0_to_7cm_mean,soil_moisture_0_to_7cm_mean&past_days=92&forecast_days=16&timezone=Europe%2FBrussels';
+function wxInfo(){const l=lastDate();$('wxInfo').textContent=`Weer: Open-Meteo voor de vallei, tot ${fmtD(l)}${W.fcFrom<=l?`; vanaf ${fmtD(W.fcFrom)} is het een verwachting`:''}.`}
+function merge(daily){
+  const map={rain:'precipitation_sum',t:'temperature_2m_mean',tmin:'temperature_2m_min',tsoil:'soil_temperature_0_to_7cm_mean',sm:'soil_moisture_0_to_7cm_mean'};
+  if(!daily||!daily.time) throw new Error('geen dagelijkse reeks gevonden');
+  daily.time.forEach((ts,j)=>{const i=idx(parse(ts)); if(i<0) return; while(W.rain.length<i) KEYS.forEach(k=>W[k].push(null)); KEYS.forEach(k=>{const v=daily[map[k]]?.[j]; if(v!=null) W[k][i]=v; else if(W[k][i]===undefined) W[k][i]=null;});});
+  W.fcFrom=localToday();
+}
+const WXKEY='boswijzer-weer-v1';
+function saveWx(){try{localStorage.setItem(WXKEY,JSON.stringify({start:iso(W.start),fcFrom:iso(W.fcFrom),...Object.fromEntries(KEYS.map(k=>[k,W[k]]))}))}catch(e){}}
+async function fetchWx(manual){
+  const msg=$('wxMsg'); if(manual) msg.textContent='Bezig met ophalen…';
+  try{const r=await fetch(FC_URL,{cache:'no-store'}); if(!r.ok) throw new Error('status '+r.status); const j=await r.json(); merge(j.daily); saveWx(); wxInfo(); renderAll(); renderVisit(); msg.textContent=`Weer bijgewerkt tot ${fmtD(lastDate())}.`}
+  catch(e){msg.textContent=navigator.onLine===false?'Geen bereik: de app gebruikt het laatst bewaarde weer.':`Weer ophalen lukte niet (${e.message}). De app gebruikt het laatst bewaarde weer.`}
+}
+$('wxBtn').addEventListener('click',()=>fetchWx(true));
+
+
+// ---------- Bezoek
+const BODEM=['droog','vochtig','doorweekt'], WEERNU=['droog','regen','mist'], STADIA=['jong','rijp','vergaan'], AANTAL=['1','2–10','meer dan 10'], ZONES=['A','B','C','D','E'];
+const DKEY='boswijzer-bezoek-v1';
+const pad=n=>String(n).padStart(2,'0');
+const todayL=()=>{const d=new Date();return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`};
+const nowT=()=>{const d=new Date();return `${pad(d.getHours())}:${pad(d.getMinutes())}`};
+const blankV=()=>({datum:todayL(),start:'',eind:'',route:'',bodem:'',weer:'',soorten:{},extra:'',notitie:''});
+let V=blankV(), ROUTES=['Route 1'];
+try{const r=localStorage.getItem(DKEY); if(r) V=Object.assign(blankV(),JSON.parse(r))}catch(e){}
+const keepV=()=>{try{localStorage.setItem(DKEY,JSON.stringify(V))}catch(e){}};
+function chipSet(el,opts,cur,pick){el.replaceChildren(...opts.map(o=>{const b=document.createElement('button');b.type='button';b.className='chip';b.textContent=o;b.setAttribute('aria-pressed',String(cur===o));b.addEventListener('click',()=>pick(cur===o?'':o));return b}))}
+function targets(){
+  const d=parse(V.datum||todayL()); const i=idx(d);
+  if(i<30||i>W.rain.length-1){ // geen weer: val terug op seizoen en eigen maanden
+    const m=d.getUTCMonth()+1; return SP.filter(s=>s.g!=='overjarig'&&(seasonAt(s,d)>=0.45||s.own.includes(m))).map(s=>({s,final:seasonAt(s,d)}));
+  }
+  const f=features(i); return SP.filter(s=>s.g!=='overjarig').map(s=>score(s,d,f)).filter(r=>r.final>=0.22).sort((a,b)=>b.final-a.final);
+}
+
+function parseGpx(text){
+  const x=new DOMParser().parseFromString(text,'application/xml');
+  if(x.querySelector('parsererror')) throw new Error('geen geldig GPX-bestand');
+  const pts=[...x.getElementsByTagName('trkpt')].map(p=>({la:+p.getAttribute('lat'),lo:+p.getAttribute('lon'),t:p.getElementsByTagName('time')[0]?.textContent||null})).filter(p=>isFinite(p.la)&&isFinite(p.lo));
+  if(pts.length<2) throw new Error('geen spoor gevonden in dit bestand');
+  let km=0; for(let i=1;i<pts.length;i++){const a=pts[i-1],b=pts[i];const dy=(b.la-a.la)*111.32,dx=(b.lo-a.lo)*111.32*Math.cos(a.la*Math.PI/180);km+=Math.hypot(dx,dy)}
+  const t0=pts[0].t?new Date(pts[0].t):null, t1=pts[pts.length-1].t?new Date(pts[pts.length-1].t):null;
+  const step=Math.max(1,Math.ceil(pts.length/400));
+  const sp=pts.filter((p,i)=>i%step===0||i===pts.length-1).map(p=>[Math.round(p.la*1e5)/1e5,Math.round(p.lo*1e5)/1e5]);
+  const loc=d=>d?d.toLocaleTimeString('nl-BE',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/Brussels'}):null;
+  const day=t0?t0.toLocaleDateString('sv-SE',{timeZone:'Europe/Brussels'}):null;
+  const naam=x.querySelector('trk > name')?.textContent||null;
+  return {datum:day,start:loc(t0),eind:loc(t1),duur_min:t0&&t1?Math.round((t1-t0)/60000):null,afstand_km:Math.round(km*100)/100,naam,pts:sp};
+}
+function gpxLine(g){return g?`Spoor: ${g.naam?esc(g.naam)+' · ':''}${g.start||'?'}–${g.eind||'?'} · ${g.duur_min??'?'} min · ${nf(g.afstand_km,1)} km`:''}
+for(const id of ['vStart','vEind']) $(id).addEventListener('change',e=>{V[id==='vStart'?'start':'eind']=e.target.value;keepV()});
+document.querySelectorAll('[data-now]').forEach(b=>b.addEventListener('click',()=>{const id=b.dataset.now;V[id==='vStart'?'start':'eind']=nowT();keepV();renderVisit()}));
+
+function renderVisit(){
+  $('vDatum').value=V.datum; $('vStart').value=V.start; $('vEind').value=V.eind; $('vExtra').value=V.extra; $('vNotitie').value=V.notitie;
+  chipSet($('vBodem'),BODEM,V.bodem,v=>{V.bodem=v;keepV();renderVisit()});
+  chipSet($('vWeer'),WEERNU,V.weer,v=>{V.weer=v;keepV();renderVisit()});
+  const T=targets(); const L=$('vList'); L.replaceChildren();
+  for(const r of T){
+    const s=r.s, a=V.soorten[s.sci]||{}, k=GUILD[s.g];
+    const row=document.createElement('div'); row.className='vs';
+    row.innerHTML=`<div class="h"><span class="nm"><span class="sw" style="background:${GINFO[k].col}" aria-hidden="true"></span><span><b style="font-weight:600">${esc(s.nl)}</b><br><span class="sci">${esc(s.sci)}</span></span></span></div>`;
+    const seg=document.createElement('div'); seg.className='seg'; seg.setAttribute('role','group'); seg.setAttribute('aria-label',s.nl);
+    for(const [val,txt] of [['niet','Niet'],['gezien','Gezien']]){const b=document.createElement('button');b.type='button';b.textContent=txt;b.setAttribute('aria-pressed',String(a.s===val));
+      b.addEventListener('click',()=>{if(a.s===val) delete V.soorten[s.sci]; else V.soorten[s.sci]=val==='gezien'?{s:'gezien',stadium:a.stadium||[],aantal:a.aantal||'',zone:a.zone||''}:{s:'niet'}; keepV(); renderVisit()}); seg.append(b)}
+    row.querySelector('.h').append(seg);
+    if(a.s==='gezien'){
+      const sub=document.createElement('div'); sub.className='sub';
+      const mk=(lab)=>{const l=document.createElement('span');l.className='lbl';l.textContent=lab;const c=document.createElement('div');c.className='chips';sub.append(l,c);return c};
+      const c1=mk('Stadium'); for(const st of STADIA){const b=document.createElement('button');b.type='button';b.className='chip';b.textContent=st;const on=(a.stadium||[]).includes(st);b.setAttribute('aria-pressed',String(on));
+        b.addEventListener('click',()=>{const set=new Set(a.stadium||[]);on?set.delete(st):set.add(st);a.stadium=STADIA.filter(x=>set.has(x));keepV();renderVisit()});c1.append(b)}
+      chipSet(mk('Aantal'),AANTAL,a.aantal,v=>{a.aantal=v;keepV();renderVisit()});
+      chipSet(mk('Zone op Route 1 (als je die liep)'),ZONES,a.zone,v=>{a.zone=v;keepV();renderVisit()});
+      row.append(sub);
+    }
+    L.append(row);
+  }
+  if(!T.length) L.innerHTML='<p class="note">Voor deze datum verwacht de app niets. Noteer wat je zag onder Andere soorten.</p>';
+  const ans=T.filter(r=>V.soorten[r.s.sci]).length, seen=T.filter(r=>V.soorten[r.s.sci]?.s==='gezien').length;
+  $('vProg').textContent=`${ans}/${T.length} · ${seen} gezien`; $('vRest').hidden=ans===T.length||!T.length;
+}
+$('vDatum').addEventListener('change',e=>{V.datum=e.target.value;keepV();renderVisit()});
+$('vExtra').addEventListener('input',e=>{V.extra=e.target.value;keepV()});
+$('vNotitie').addEventListener('input',e=>{V.notitie=e.target.value;keepV()});
+$('vRest').addEventListener('click',()=>{for(const r of targets()) if(!V.soorten[r.s.sci]) V.soorten[r.s.sci]={s:'niet'};keepV();renderVisit()});
+$('vSave').addEventListener('click',async()=>{
+  const msg=$('vMsg'); const T=targets();
+  if(!V.datum){msg.textContent='Vul eerst de datum in.';return}
+  const soorten=T.filter(r=>V.soorten[r.s.sci]).map(r=>{const a=V.soorten[r.s.sci];return {soort:r.s.sci,nl:r.s.nl,leefwijze:GINFO[GUILD[r.s.g]].naam.toLowerCase(),gezien:a.s==='gezien',stadium:a.stadium||[],aantal:a.aantal||null,zone:a.zone||null,kans:Math.round(r.final*100)/100}});
+  let duur=null; if(V.start&&V.eind){const [h1,m1]=V.start.split(':').map(Number),[h2,m2]=V.eind.split(':').map(Number);duur=(h2*60+m2)-(h1*60+m1);if(duur<0)duur=null}
+  const doc={datum:V.datum,start:V.start||null,eind:V.eind||null,duur_min:duur,afstand_km:null,spoor:null,bodem:V.bodem||null,weer:V.weer||null,soorten,n_lijst:T.length,n_gezien:soorten.filter(x=>x.gezien).length,extra:V.extra,notitie:V.notitie,bron:'Boswijzer',opgeslagen:new Date().toISOString()};
+  doc.id=V.datum+'-'+Date.now().toString(36);
+  VISITS.push(doc); saveVisits(); V=blankV(); keepV(); renderVisit(); renderHist();
+  msg.textContent=`Opgeslagen op dit toestel: ${doc.n_gezien} van ${doc.n_lijst} verwachte soorten gezien. Exporteer af en toe voor Claude.`;
+});
+const VKEY='boswijzer-bezoeken-v1';
+let VISITS=[];
+function saveVisits(){try{localStorage.setItem(VKEY,JSON.stringify(VISITS))}catch(e){$('vMsg').textContent='Opslaan op dit toestel lukte niet: het geheugen van de browser is vol of geblokkeerd. Exporteer nu je bezoeken.'}}
+function renderHist(){
+  const h=$('vHist'); const list=VISITS.slice().sort((a,b)=>b.datum.localeCompare(a.datum));
+  TRACKS=list.map(x=>x.spoor).filter(Boolean); if(FINDS) renderMap();
+  if(!list.length){h.innerHTML='<p class="note">Opgeslagen bezoeken verschijnen hier.</p>';return}
+  h.replaceChildren(...list.slice(0,10).map(x=>{const r=document.createElement('div');r.className='hist-row';
+    r.innerHTML=`<span>${esc(fmtD(parse(x.datum)))}${x.duur_min?' · '+x.duur_min+' min':''}${x.afstand_km?' · '+nf(x.afstand_km,1)+' km':''}${x.spoor?' · spoor':''}</span><span class="mono">${x.n_gezien??'–'}/${x.n_lijst??'–'} gezien</span>`;return r}));
+  $('vCount').textContent=`${VISITS.length} bezoeken op dit toestel.`;
+}
+async function exportVisits(){
+  const name=`boswijzer-bezoeken-${todayL()}.json`;
+  const blob=new Blob([JSON.stringify({app:'Burnot Boswijzer',versie:1,geexporteerd:new Date().toISOString(),bezoeken:VISITS},null,1)],{type:'application/json'});
+  const file=new File([blob],name,{type:'application/json'});
+  try{ if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:name});return} }catch(e){ if(e&&e.name==='AbortError') return; }
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; document.body.append(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);
+}
+$('vExport').addEventListener('click',exportVisits);
+$('vImport').addEventListener('change',e=>{
+  const f=e.target.files[0]; if(!f) return; const rd=new FileReader();
+  rd.onload=()=>{try{const j=JSON.parse(rd.result); const inc=Array.isArray(j)?j:j.bezoeken; if(!Array.isArray(inc)) throw 0;
+      const byId=new Map(VISITS.map(v=>[v.id,v])); let n=0; for(const v of inc){ if(!v||!v.datum) continue; if(!v.id) v.id=v.datum+'-imp'+(n); byId.set(v.id,v); n++; }
+      VISITS=[...byId.values()]; saveVisits(); renderHist(); $('vMsg').textContent=`${n} bezoeken ingelezen.`}
+    catch(err){$('vMsg').textContent='Dit bestand is geen Boswijzer-export.'} e.target.value=''};
+  rd.readAsText(f);
+});
+// ---------- routing en opstart
+function route(){
+  const v=location.hash==='#kaart'?'kaart':location.hash==='#bezoek'?'bezoek':'vandaag';
+  for(const n of ['vandaag','kaart','bezoek']){$('v-'+n).hidden=v!==n; const t=$('tab-'+n); if(v===n) t.setAttribute('aria-current','page'); else t.removeAttribute('aria-current');}
+}
+function renderAll(){renderToday();renderMap()}
+document.querySelectorAll('[data-q]').forEach(b=>b.addEventListener('click',()=>{$('date').value=iso(qDate(b.dataset.q));renderAll()}));
+$('date').addEventListener('change',renderAll);
+window.addEventListener('hashchange',route);
+
+(async function boot(){
+  try{
+    const r=await fetch('data.json'); const D=await r.json();
+    SP=D.species; FINDS=D.finds; ROUTE=D.route;
+    W={start:parse(D.weather.start),fcFrom:parse(D.weather.fcFrom),...Object.fromEntries(KEYS.map(k=>[k,D.weather[k].slice()]))};
+    try{const c=JSON.parse(localStorage.getItem(WXKEY)||'null'); if(c&&c.start===D.weather.start&&c.rain.length>=W.rain.length){KEYS.forEach(k=>W[k]=c[k]);W.fcFrom=parse(c.fcFrom)}}catch(e){}
+    let stored=null; try{stored=JSON.parse(localStorage.getItem(VKEY)||'null')}catch(e){}
+    VISITS=Array.isArray(stored)?stored:(D.bezoeken||[]); if(!Array.isArray(stored)) saveVisits();
+  }catch(e){$('state').textContent='Laden mislukt. Open de app één keer met bereik.';return}
+  let start=localToday(); if(idx(start)>W.rain.length-1) start=lastDate();
+  $('date').value=iso(start);
+  $('state').hidden=true; $('foot').hidden=false;
+  wxInfo(); route(); renderAll(); renderVisit(); renderHist();
+  fetchWx(false);
+  try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
+  if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{})}
+})();
+})();
+</script>
+
+</body>
+</html>
