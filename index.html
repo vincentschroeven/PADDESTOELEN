@@ -52,25 +52,23 @@ h1{margin:0;font:600 26px/1.1 var(--cond);text-wrap:balance}
 .soil svg{display:block;width:100%;height:auto}
 .soil .ax{display:flex;justify-content:space-between;font:400 10.5px var(--mono);color:var(--muted)}
 
-main{flex:1;padding-bottom:calc(140px + env(safe-area-inset-bottom,0px))}
+main{flex:1;padding-bottom:calc(100px + env(safe-area-inset-bottom,0px))}
 .group{padding-top:16px}
 .ghead{display:flex;justify-content:space-between;align-items:baseline;padding-bottom:6px;border-bottom:1px solid var(--fg)}
 .gname{display:flex;align-items:center;gap:8px;font:600 16px var(--cond)}
 .gname i{width:10px;height:10px;display:inline-block}
 .gcount{font:500 12px var(--mono);color:var(--muted);font-variant-numeric:tabular-nums}
 .row{border-bottom:1px solid var(--line)}
-.row.seen{background:var(--soft)}
 .tap{display:flex;align-items:center;gap:12px;width:100%;min-height:50px;padding:6px 0;text-align:left}
-.box{width:22px;height:22px;flex-shrink:0;border:2px solid var(--grey);display:flex;align-items:center;justify-content:center}
-.box svg{display:none}
-.row.seen .box svg{display:block}
+.sw{width:10px;height:10px;flex-shrink:0}
 .nm{display:flex;flex-direction:column;flex:1;min-width:0}
 .nm b{font-weight:600}
 .nm i{font-size:12.5px;color:var(--muted)}
 .tag{font:500 10.5px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
 .tag.new{color:var(--myc)}.tag.warn{color:var(--warn)}
-.opt{display:none;flex-direction:column;gap:6px;padding:0 0 10px 34px}
-.row.seen .opt{display:flex}
+.det{display:flex;flex-direction:column;gap:6px;padding:0 0 12px 22px;font-size:13.5px;color:var(--muted)}
+.det ul{margin:0;padding-left:16px}
+.det .fact{color:var(--fg)}
 .chips{display:flex;flex-wrap:wrap;gap:4px}
 .chip{min-height:34px;padding:0 10px;border:1px solid var(--line);font:500 11.5px var(--mono)}
 .chip[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
@@ -125,11 +123,7 @@ textarea{width:100%;min-height:64px;padding:8px;border:1px solid var(--line);bac
 
 <div class="bar pad" id="bar" hidden>
   <div class="bar-in">
-    <span class="hint" id="hint">Tik aan wat je ziet. De rest telt als niet gezien.</span>
-    <div class="btns">
-      <button type="button" class="ghost" id="mapBtn">Kaart</button>
-      <button type="button" class="primary" id="doneBtn">Bezoek afronden</button>
-    </div>
+    <button type="button" class="primary" id="mapBtn">Kaart: plekken voor vandaag</button>
   </div>
 </div>
 
@@ -143,7 +137,7 @@ textarea{width:100%;min-height:64px;padding:8px;border:1px solid var(--line);bac
     <svg class="map" id="map" role="img" aria-label="Kaart van de Burnotvallei met je vindplaatsen"></svg>
     <div class="pick" id="pick">Tik een stip voor soort en datum.</div>
     <div id="legend"></div>
-    <p class="note" style="padding:12px 0 40px">Zwarte lijn: Route 1. Grijze lijnen: wandelingen waarvan Claude het GPX-spoor koppelde.</p>
+    <p class="note" style="padding:12px 0 40px">Zwarte lijn: Route 1. Grijze lijnen: je wandelingen uit GPX.</p>
   </div>
 </div>
 
@@ -161,19 +155,12 @@ textarea{width:100%;min-height:64px;padding:8px;border:1px solid var(--line);bac
       <div id="hist"></div>
     </div>
     <div class="block">
-      <h3>Delen met Claude</h3>
-      <p class="note">Je bezoeken staan op deze telefoon. Exporteer en stuur het bestand samen met je GPX naar Claude. Met Importeer laad je een aangevulde versie terug.</p>
-      <div class="chips">
-        <button type="button" class="ghost" id="exportBtn">Exporteer</button>
-        <label class="ghost" for="importFile" style="display:inline-flex;align-items:center;cursor:pointer">Importeer</label>
-        <input type="file" id="importFile" accept=".json,application/json" style="position:absolute;left:-9999px">
-      </div>
-      <p class="note" id="ioMsg" aria-live="polite"></p>
+      <h3>Een bezoek toevoegen</h3>
+      <p class="note">Stuur Claude de GPX uit Strava en je export van waarnemingen.be. Claude maakt het bezoek: wat je zag uit ObsIdentify, wat verwacht werd maar niet gemeld is als niet gezien, en je spoor op de kaart.</p>
     </div>
   </div>
 </div>
 
-<div class="toast" id="toast" role="status" hidden></div>
 
 <script>
 (function(){
@@ -304,18 +291,14 @@ function localToday(){const t=new Date();return new Date(Date.UTC(t.getFullYear(
 const nowT=()=>{const d=new Date();return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`};
 const store={get(k,f){try{const v=localStorage.getItem(k);return v==null?f:JSON.parse(v)}catch(e){return f}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
 
-// ---------- de ronde (huidige wandeling)
-const RKEY='boswijzer-ronde-v1', VKEY='boswijzer-bezoeken-v1', WXKEY='boswijzer-weer-v1';
-const blankR=()=>({datum:iso(localToday()),start:null,seen:{},extra:''});
-let R=store.get(RKEY,null)||blankR();
-if(!Object.keys(R.seen).length&&!R.extra&&R.datum!==iso(localToday())) R=blankR();
-const saveR=()=>store.set(RKEY,R);
+const WXKEY='boswijzer-weer-v1';
+let DATUM=iso(localToday()); const open={};
 
 // ---------- hoofdscherm
 function render(){
-  const d=parse(R.datum); const i=idx(d);
-  const today=R.datum===iso(localToday());
-  $('date').value=R.datum;
+  const d=parse(DATUM); const i=idx(d);
+  const today=DATUM===iso(localToday());
+  $('date').value=DATUM;
   $('dateLbl').textContent=today?'Vandaag · '+d.toLocaleDateString('nl-BE',{day:'numeric',month:'short',timeZone:'UTC'}):d.toLocaleDateString('nl-BE',{weekday:'short',day:'numeric',month:'short',timeZone:'UTC'});
   let f=null, wi=i, stale=false;
   if(i>W.rain.length-1&&i-(W.rain.length-1)<=7){wi=W.rain.length-1;stale=true}
@@ -346,64 +329,29 @@ function render(){
   const L=$('list'); L.replaceChildren();
   for(const k of ['m','s','p']){
     const items=high.filter(r=>GUILD[r.s.g]===k); if(!items.length) continue;
-    const n=items.filter(r=>R.seen[r.s.sci]).length;
     const g=document.createElement('section'); g.className='group';
-    g.innerHTML=`<div class="ghead"><span class="gname"><i style="background:${GC[k]}"></i>${GN[k]}</span><span class="gcount">${n?n+' / '+items.length+' gezien':items.length}</span></div>`;
+    g.innerHTML=`<div class="ghead"><span class="gname"><i style="background:${GC[k]}"></i>${GN[k]}</span><span class="gcount">${items.length}</span></div>`;
     for(const r of items) g.append(row(r));
     L.append(g);
   }
   if(mid.length){
     const b=document.createElement('button'); b.type='button'; b.className='mis'; b.setAttribute('aria-expanded',String(misOpen));
-    const nSeenMid=mid.filter(r=>R.seen[r.s.sci]).length;
-    b.innerHTML=`Misschien ook<span>${mid.length} soorten${nSeenMid?' · '+nSeenMid+' gezien':''} ${misOpen?'▴':'▾'}</span>`;
+    b.innerHTML=`Misschien ook<span>${mid.length} soorten ${misOpen?'▴':'▾'}</span>`;
     b.addEventListener('click',()=>{misOpen=!misOpen;render()}); L.append(b);
     if(misOpen){const g=document.createElement('section'); for(const r of mid) g.append(row(r)); L.append(g)}
   }
-  const ex=document.createElement('div'); ex.className='extra';
-  ex.innerHTML=`<label class="lbl" for="extra">Andere soorten of notitie</label><textarea id="extra" placeholder="bv. parelstuifzwammen, veel en rijp"></textarea>`;
-  L.append(ex); const ta=ex.querySelector('textarea'); ta.value=R.extra; ta.addEventListener('input',()=>{R.extra=ta.value;saveR();bar()});
-  bar();
 }
-const STADIA=['jong','rijp','oud'], AANTAL=['1','2–10','10+'];
 function row(r){
-  const s=r.s, k=GUILD[s.g], a=R.seen[s.sci];
-  const el=document.createElement('div'); el.className='row'+(a?' seen':'');
-  const tag=!s.own.length?'<span class="tag new">nieuw voor jou</span>':DANGER[s.sci]?`<span class="tag warn">${DANGER[s.sci]}</span>`:(typeof TOXIC_NEAR!=='undefined'&&TOXIC_NEAR.includes(s.sci))||s.tox?'<span class="tag warn">giftig</span>':'';
-  el.innerHTML=`<button type="button" class="tap" aria-pressed="${!!a}"><span class="box" style="${a?`background:${GC[k]};border-color:${GC[k]}`:''}"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M2 7.5 L5.5 11 L12 3.5" fill="none" stroke="var(--on)" stroke-width="2.4" stroke-linecap="square"/></svg></span><span class="nm"><b>${esc(s.nl)}</b><i>${esc(s.sci)}</i></span>${tag}</button>
-  <div class="opt"><span class="lbl">Optioneel</span><div class="chips"></div></div>`;
-  el.querySelector('.tap').addEventListener('click',()=>{
-    if(R.seen[s.sci]) delete R.seen[s.sci]; else {R.seen[s.sci]={st:'',aa:''}; if(!R.start&&R.datum===iso(localToday())) R.start=nowT();}
-    saveR(); render();
-  });
-  if(a){const c=el.querySelector('.chips');
-    for(const [key,opts] of [['st',STADIA],['aa',AANTAL]]) for(const o of opts){const b=document.createElement('button');b.type='button';b.className='chip';b.textContent=o;b.setAttribute('aria-pressed',String(a[key]===o));
-      b.addEventListener('click',()=>{a[key]=a[key]===o?'':o;saveR();b.setAttribute('aria-pressed',String(a[key]===o));c.querySelectorAll('.chip').forEach(x=>{const kk=STADIA.includes(x.textContent)?'st':'aa';x.setAttribute('aria-pressed',String(a[kk]===x.textContent))})});c.append(b)}}
+  const s=r.s, k=GUILD[s.g], isOpen=!!open[s.sci];
+  const el=document.createElement('div'); el.className='row';
+  const tag=!s.own.length?'<span class="tag new">nieuw voor jou</span>':DANGER[s.sci]?`<span class="tag warn">${DANGER[s.sci]}</span>`:(TOXIC_NEAR.includes(s.sci)||s.tox)?'<span class="tag warn">giftig</span>':'';
+  const why=(r.why||[]).slice(0,3).map(w=>`<li>${esc(w)}</li>`).join('');
+  el.innerHTML=`<button type="button" class="tap" aria-expanded="${isOpen}"><span class="sw" style="background:${GC[k]}" aria-hidden="true"></span><span class="nm"><b>${esc(s.nl)}</b><i>${esc(s.sci)}</i></span>${tag}</button>`+
+    (isOpen?`<div class="det">${why?`<ul>${why}</ul>`:''}${FACTS[s.sci]?`<span class="fact">${esc(FACTS[s.sci])}</span>`:''}${EAT[s.sci]&&EAT[s.sci].l?`<span>Let op: ${esc(EAT[s.sci].l)}</span>`:''}</div>`:'');
+  el.querySelector('.tap').addEventListener('click',()=>{open[s.sci]=!open[s.sci];render()});
   return el;
 }
-let confirmEmpty=0;
-function bar(){
-  const n=Object.keys(R.seen).length;
-  $('doneBtn').textContent=confirmEmpty?'Leeg bezoek? Tik nog eens':`Bezoek afronden · ${n} gezien`;
-  $('hint').textContent=R.start?`Gestart ${R.start} · niet aangetikt telt als niet gezien`:'Tik aan wat je ziet. De rest telt als niet gezien.';
-}
-function toast(t){const e=$('toast');e.textContent=t;e.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>e.hidden=true,3500)}
-$('doneBtn').addEventListener('click',()=>{
-  const n=Object.keys(R.seen).length;
-  if(!n&&!R.extra&&!confirmEmpty){confirmEmpty=1;bar();setTimeout(()=>{confirmEmpty=0;bar()},4000);return}
-  confirmEmpty=0;
-  const today=R.datum===iso(localToday());
-  const eind=today?nowT():null; const start=R.start||(today?eind:null);
-  let duur=null; if(start&&eind){const [h1,m1]=start.split(':').map(Number),[h2,m2]=eind.split(':').map(Number);duur=(h2*60+m2)-(h1*60+m1);if(duur<0)duur=null}
-  const lijst=RES.filter(r=>r.final>=0.5);
-  const extraSeen=RES.filter(r=>r.final<0.5&&R.seen[r.s.sci]);
-  const soorten=[...lijst,...extraSeen].map(r=>{const a=R.seen[r.s.sci];return {soort:r.s.sci,nl:r.s.nl,leefwijze:GN[GUILD[r.s.g]].toLowerCase(),gezien:!!a,stadium:a&&a.st?[a.st]:[],aantal:a&&a.aa||null,kans:Math.round(r.final*100)/100}});
-  const doc={id:R.datum+'-'+Date.now().toString(36),datum:R.datum,start,eind,duur_min:duur,afstand_km:null,spoor:null,soorten,n_lijst:lijst.length,n_gezien:soorten.filter(x=>x.gezien).length,extra:R.extra,notitie:'',bron:'Boswijzer',opgeslagen:new Date().toISOString()};
-  VISITS.push(doc);
-  if(!store.set(VKEY,VISITS)){toast('Opslaan lukte niet: het geheugen is vol. Exporteer je bezoeken via Meer.');VISITS.pop();return}
-  R=blankR(); saveR(); misOpen=false; render(); window.scrollTo(0,0);
-  toast(`Bezoek opgeslagen · ${doc.n_gezien} gezien`);
-});
-$('date').addEventListener('change',e=>{if(!e.target.value) return; R.datum=e.target.value; if(R.datum!==iso(localToday())) R.start=null; saveR(); render()});
+$('date').addEventListener('change',e=>{if(!e.target.value) return; DATUM=e.target.value; render()});
 
 // ---------- schermen
 function show(){
@@ -468,21 +416,6 @@ async function fetchWx(manual){
   catch(e){ if(manual) msg.textContent=navigator.onLine===false?'Geen bereik: de app gebruikt het laatst bewaarde weer.':`Ophalen lukte niet (${e.message}).`}
 }
 $('wxBtn').addEventListener('click',()=>fetchWx(true));
-$('exportBtn').addEventListener('click',async()=>{
-  const name=`boswijzer-bezoeken-${iso(localToday())}.json`;
-  const blob=new Blob([JSON.stringify({app:'Burnot Boswijzer',versie:2,geexporteerd:new Date().toISOString(),bezoeken:VISITS},null,1)],{type:'application/json'});
-  const file=new File([blob],name,{type:'application/json'});
-  try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:name});return}}catch(e){if(e&&e.name==='AbortError')return}
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.append(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);
-});
-$('importFile').addEventListener('change',e=>{
-  const f=e.target.files[0]; if(!f) return; const rd=new FileReader();
-  rd.onload=()=>{try{const j=JSON.parse(rd.result);const inc=Array.isArray(j)?j:j.bezoeken;if(!Array.isArray(inc))throw 0;
-      const by=new Map(VISITS.map(v=>[v.id,v]));let n=0;for(const v of inc){if(!v||!v.datum)continue;if(!v.id)v.id=v.datum+'-imp'+n;by.set(v.id,v);n++}
-      VISITS=[...by.values()];store.set(VKEY,VISITS);renderMeer();$('ioMsg').textContent=`${n} bezoeken ingelezen.`}
-    catch(err){$('ioMsg').textContent='Dit bestand is geen Boswijzer-export.'} e.target.value=''};
-  rd.readAsText(f);
-});
 
 // ---------- opstart
 (async function boot(){
@@ -491,9 +424,7 @@ $('importFile').addEventListener('change',e=>{
     SP=D.species; FINDS=D.finds; ROUTE=D.route;
     W={start:parse(D.weather.start),fcFrom:parse(D.weather.fcFrom),...Object.fromEntries(KEYS.map(k=>[k,D.weather[k].slice()]))};
     const c=store.get(WXKEY,null); if(c&&c.start===D.weather.start&&c.rain.length>=W.rain.length){KEYS.forEach(k=>W[k]=c[k]);W.fcFrom=parse(c.fcFrom)}
-    const st=store.get(VKEY,null); VISITS=Array.isArray(st)?st:(D.bezoeken||[]); if(!Array.isArray(st)) store.set(VKEY,VISITS);
-    // bezoeken die Claude in data.json aanvulde (bv. met GPX) overschrijven de lokale kopie
-    if(Array.isArray(D.bezoeken)){const by=new Map(VISITS.map(v=>[v.id,v]));let ch=false;for(const v of D.bezoeken){const o=by.get(v.id);if(v.id&&(!o||(v.bijgewerkt&&v.bijgewerkt!==o.bijgewerkt))){by.set(v.id,v);ch=true}}if(ch){VISITS=[...by.values()];store.set(VKEY,VISITS)}}
+    VISITS=D.bezoeken||[];
   }catch(e){$('state').textContent='Laden mislukt. Open de app één keer met bereik.';return}
   render(); show(); fetchWx(false);
   try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
