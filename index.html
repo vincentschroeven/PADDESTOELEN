@@ -19,7 +19,7 @@
 /* Layout: one screen to look and tick off; short header, open list grouped by lifestyle, thumb bar at the bottom. Map and extras open as their own screens. */
 :root{
   --bg:#FFFFFF; --fg:#111311; --muted:#555A56; --line:#D9DBD9; --soft:#F2F3F1;
-  --myc:#1F6B47; --sap:#A8782F; --par:#111311; --grey:#A9AEAA; --warn:#A8321F; --focus:#2C6E9E; --on:#FFFFFF;
+  --myc:#1F6B47; --sap:#A8782F; --par:#111311; --grey:#A9AEAA; --warn:#A8321F; --focus:#2C6E9E; --on:#FFFFFF; --wet:#2C6E9E; --dry:#C9D4DE;
   --cond:"IBM Plex Sans Condensed","Arial Narrow",sans-serif;
   --body:"IBM Plex Sans","Helvetica Neue",Arial,sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
@@ -27,7 +27,7 @@
 }
 @media (prefers-color-scheme: dark){:root{
   --bg:#121413; --fg:#ECEFEC; --muted:#A3A9A5; --line:#2E322F; --soft:#1B1E1C;
-  --myc:#5FB88A; --sap:#D6A65A; --par:#ECEFEC; --grey:#5E635F; --warn:#F08A73; --focus:#86AEDB; --on:#121413; color-scheme:dark}}
+  --myc:#5FB88A; --sap:#D6A65A; --par:#ECEFEC; --grey:#5E635F; --warn:#F08A73; --focus:#86AEDB; --on:#121413; --wet:#6FA3D6; --dry:#2E3A45; color-scheme:dark}}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 html,body{height:100%}
@@ -48,8 +48,9 @@ header.top{padding-top:calc(env(safe-area-inset-top,0px) + 14px);padding-bottom:
 h1{margin:0;font:600 26px/1.1 var(--cond);text-wrap:balance}
 .count{font:500 26px/1.1 var(--cond);white-space:nowrap}
 .say{margin:0;font-size:13.5px;color:var(--muted)}
-.stripes{display:grid;grid-template-columns:repeat(14,minmax(0,1fr));gap:2px;height:14px}
-.stripes span.fc{background-image:repeating-linear-gradient(135deg,transparent 0 3px,rgba(255,255,255,.55) 3px 5px)}
+.soil{display:flex;flex-direction:column;gap:3px}
+.soil svg{display:block;width:100%;height:auto}
+.soil .ax{display:flex;justify-content:space-between;font:400 10.5px var(--mono);color:var(--muted)}
 
 main{flex:1;padding-bottom:calc(140px + env(safe-area-inset-bottom,0px))}
 .group{padding-top:16px}
@@ -117,7 +118,7 @@ textarea{width:100%;min-height:64px;padding:8px;border:1px solid var(--line);bac
     </div>
     <div class="verdict"><h1 id="verdict">Laden…</h1><span class="count" id="count"></span></div>
     <p class="say" id="say"></p>
-    <div class="stripes" id="stripes" role="img" aria-label="Bodemvocht van de laatste 14 dagen"></div>
+    <div class="soil"><span class="say">Bodemvocht, 14 dagen. Boven de stippellijn is de bodem nat genoeg voor bodemsoorten.</span><svg id="stripes" viewBox="0 0 350 40" role="img" aria-label="Bodemvocht van de laatste 14 dagen"></svg><div class="ax"><span id="axFrom"></span><span id="axTo"></span></div></div>
   </header>
   <main class="pad" id="list"><p class="state" id="state">Soorten en weer van de vallei laden.</p></main>
 </div>
@@ -336,11 +337,11 @@ function render(){
     $('say').textContent=p.join(' ');
   } else $('say').textContent=`Geen weer voor deze dag; de lijst volgt alleen het seizoen.`;
   // strepen
-  const st=$('stripes'); st.replaceChildren();
-  const lo=[214,196,160], hi=[24,92,60];
-  for(let k=13;k>=0;k--){const j=Math.min(wi,W.rain.length-1)-k; const s=W.sm[j]; const t=s==null?0:Math.max(0,Math.min(1,(s-0.26)/(0.42-0.26)));
-    const sp=document.createElement('span'); sp.style.background=`rgb(${lo.map((a,n)=>Math.round(a+(hi[n]-a)*t))})`;
-    if(new Date(W.start.getTime()+j*DAY)>=W.fcFrom) sp.className='fc'; st.append(sp);}
+  const st=$('stripes'); const end=Math.min(wi,W.rain.length-1); const bw=350/14; const lo=0.22, hi=0.44; const y=v=>40-Math.max(0,Math.min(1,(v-lo)/(hi-lo)))*38;
+  let svg=''; for(let k=13;k>=0;k--){const j=end-k, n=13-k, v=W.sm[j]; if(v==null) continue; const yy=y(v), wet=v>=0.34;
+    svg+=`<rect x="${(n*bw+1).toFixed(1)}" y="${yy.toFixed(1)}" width="${(bw-2).toFixed(1)}" height="${(40-yy).toFixed(1)}" fill="var(${wet?'--wet':'--dry'})"/>`;}
+  const ty=y(0.34).toFixed(1); svg+=`<line x1="0" x2="350" y1="${ty}" y2="${ty}" stroke="var(--fg)" stroke-width="1" stroke-dasharray="3 3"/>`;
+  st.innerHTML=svg; $('axFrom').textContent=fmtS(new Date(W.start.getTime()+(end-13)*DAY)); $('axTo').textContent=fmtS(new Date(W.start.getTime()+end*DAY));
   // lijst
   const L=$('list'); L.replaceChildren();
   for(const k of ['m','s','p']){
