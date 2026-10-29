@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Burnot Boswijzer</title>
 <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#121413" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -12,195 +13,166 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
-<title>Burnot Boswijzer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
-/* Layout: one narrow column for a phone in the forest; Swiss-style rules instead of cards; Isotype rows carry the forecast, the map carries the place. */
+/* Layout: one screen to look and tick off; short header, open list grouped by lifestyle, thumb bar at the bottom. Map and extras open as their own screens. */
 :root{
   --bg:#FFFFFF; --fg:#111311; --muted:#555A56; --line:#D9DBD9; --soft:#F2F3F1;
-  --myc:#1F6B47; --sap:#A8782F; --par:#111311; --grey:#A9AEAA; --focus:#2C6E9E;
+  --myc:#1F6B47; --sap:#A8782F; --par:#111311; --grey:#A9AEAA; --warn:#A8321F; --focus:#2C6E9E; --on:#FFFFFF;
   --cond:"IBM Plex Sans Condensed","Arial Narrow",sans-serif;
   --body:"IBM Plex Sans","Helvetica Neue",Arial,sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  color-scheme:light;
 }
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+@media (prefers-color-scheme: dark){:root{
   --bg:#121413; --fg:#ECEFEC; --muted:#A3A9A5; --line:#2E322F; --soft:#1B1E1C;
-  --myc:#5FB88A; --sap:#D6A65A; --par:#ECEFEC; --grey:#5E635F; --focus:#86AEDB; color-scheme:dark}}
-:root[data-theme="dark"]{
-  --bg:#121413; --fg:#ECEFEC; --muted:#A3A9A5; --line:#2E322F; --soft:#1B1E1C;
-  --myc:#5FB88A; --sap:#D6A65A; --par:#ECEFEC; --grey:#5E635F; --focus:#86AEDB; color-scheme:dark}
+  --myc:#5FB88A; --sap:#D6A65A; --par:#ECEFEC; --grey:#5E635F; --warn:#F08A73; --focus:#86AEDB; --on:#121413; color-scheme:dark}}
 *{box-sizing:border-box}
-body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.45}
-.wrap{max-width:560px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 40px;display:flex;flex-direction:column;gap:20px}
-.mono{font-family:var(--mono)}
-.lbl{font:500 11px var(--mono);letter-spacing:.1em;text-transform:uppercase}
-.top{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--fg);padding-bottom:8px}
-nav.tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border:1px solid var(--fg)}
-nav.tabs a{min-height:44px;display:flex;align-items:center;justify-content:center;text-decoration:none;color:var(--fg);font:500 12px var(--mono);letter-spacing:.08em;text-transform:uppercase}
-nav.tabs a+a{border-left:1px solid var(--fg)}
-nav.tabs a[aria-current="page"]{background:var(--fg);color:var(--bg)}
-button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
-button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
-.chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
-.chip{min-height:36px;padding:0 12px;border:1px solid var(--line);font:500 12px var(--mono)}
-.chip[aria-pressed="true"]{border-color:var(--fg);background:var(--fg);color:var(--bg)}
-input[type=date]{min-height:36px;padding:0 8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font:500 12px var(--mono);border-radius:0}
-.head{display:flex;flex-direction:column;gap:8px}
-.head .row{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
-h1{margin:0;font:600 28px/1.1 var(--cond);text-wrap:balance}
-.big{font:500 28px/1.1 var(--cond);white-space:nowrap}
-.say{margin:0;color:var(--muted);max-width:60ch}
-.say b{color:var(--fg);font-weight:500}
-.stripes{display:grid;grid-template-columns:repeat(14,minmax(0,1fr));gap:2px;height:30px}
-.stripes span{display:block}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.4;-webkit-tap-highlight-color:transparent}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:0}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.screen{min-height:100%;display:flex;flex-direction:column;max-width:560px;margin:0 auto}
+.pad{padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px))}
+.lbl{font:500 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+
+header.top{padding-top:calc(env(safe-area-inset-top,0px) + 14px);padding-bottom:12px;display:flex;flex-direction:column;gap:10px;border-bottom:1px solid var(--fg)}
+.topline{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.datebtn{position:relative;display:inline-flex;align-items:center;gap:6px;min-height:32px}
+.datebtn input{position:absolute;inset:0;opacity:0;width:100%;height:100%}
+.datebtn .lbl{color:var(--fg)}
+.morebtn{min-height:32px;min-width:44px;text-align:right}
+.verdict{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+h1{margin:0;font:600 26px/1.1 var(--cond);text-wrap:balance}
+.count{font:500 26px/1.1 var(--cond);white-space:nowrap}
+.say{margin:0;font-size:13.5px;color:var(--muted)}
+.stripes{display:grid;grid-template-columns:repeat(14,minmax(0,1fr));gap:2px;height:14px}
 .stripes span.fc{background-image:repeating-linear-gradient(135deg,transparent 0 3px,rgba(255,255,255,.55) 3px 5px)}
-.stripe-lbl{display:grid;grid-template-columns:repeat(14,minmax(0,1fr));gap:2px;font:400 10.5px var(--mono);color:var(--muted)}
-.stripe-lbl .wet{border-top:2px solid var(--fg);padding-top:3px;color:var(--fg);text-align:right;font-weight:500}
-.guild{border-top:1px solid var(--fg)}
-.guild>button{width:100%;text-align:left;padding:10px 0 12px;display:flex;flex-direction:column;gap:6px;min-height:44px}
-.guild .gh{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
-.guild .gn{font:600 18px var(--cond)}
-.guild .gc{font:500 13px var(--mono);font-variant-numeric:tabular-nums}
-.guild .gd{font-size:13px;color:var(--muted)}
-.icons{display:flex;flex-wrap:wrap;gap:4px}
-.icons svg{width:20px;height:20px;display:block}
-.list{display:flex;flex-direction:column;padding-bottom:10px}
-.sp{border-top:1px solid var(--line);padding:10px 0;display:flex;flex-direction:column;gap:4px}
-.sp .n{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
-.sp .nl{font-weight:600}
-.sp .sci{font-style:italic;color:var(--muted);font-size:13px}
-.tags{display:flex;flex-wrap:wrap;gap:4px 10px}
-.tag{font:500 10.5px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
-.tag.new{color:var(--myc)}.tag.warn{color:#B3402A}
-.why{margin:0;padding-left:16px;font-size:13px;color:var(--muted)}
-.fact{font-size:13px}
-.note{font-size:12.5px;color:var(--muted);margin:0}
-.legend-row{display:flex;align-items:center;gap:10px;min-height:32px;border-top:1px solid var(--line);font-size:13.5px}
-.legend-row .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
-.legend-row .c{margin-left:auto;font:500 12px var(--mono);font-variant-numeric:tabular-nums}
-.map{width:100%;height:auto;display:block;background:var(--soft);touch-action:manipulation}
-.pick{min-height:40px;padding:8px 0;font-size:13.5px;border-bottom:1px solid var(--line)}
-footer{border-top:1px solid var(--fg);padding-top:10px;display:flex;flex-direction:column;gap:8px}
-.btn{min-height:44px;padding:0 14px;border:1px solid var(--fg);font:500 12px var(--mono);letter-spacing:.06em;text-transform:uppercase;align-self:flex-start}
-.state{padding:24px 0;color:var(--muted)}
-.always{font-size:13px;color:var(--muted)}
-.field{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--muted)}
-.fields{display:flex;flex-wrap:wrap;gap:12px}
-.fields .field{flex:1 1 140px;min-width:0}
-input[type=time],input[type=text],textarea{min-height:40px;padding:6px 8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font:400 15px var(--body);border-radius:0;width:100%}
-textarea{min-height:70px;resize:vertical}
-.timepair{display:flex;gap:6px}
-.sec{display:flex;flex-direction:column;gap:10px;border-top:1px solid var(--fg);padding-top:10px}
-.sec h2{margin:0;font:600 18px var(--cond)}
-.vs{border-top:1px solid var(--line);padding:8px 0;display:flex;flex-direction:column;gap:8px}
-.vs .h{display:flex;justify-content:space-between;align-items:center;gap:8px}
-.vs .nm{display:flex;gap:8px;align-items:center;min-width:0}
-.vs .nm .sw{width:10px;height:10px;flex-shrink:0}
-.seg{display:grid;grid-template-columns:repeat(2,auto);border:1px solid var(--fg);flex-shrink:0}
-.seg button{min-height:40px;padding:0 10px;font:500 11px var(--mono);letter-spacing:.04em;text-transform:uppercase}
+
+main{flex:1;padding-bottom:calc(140px + env(safe-area-inset-bottom,0px))}
+.group{padding-top:16px}
+.ghead{display:flex;justify-content:space-between;align-items:baseline;padding-bottom:6px;border-bottom:1px solid var(--fg)}
+.gname{display:flex;align-items:center;gap:8px;font:600 16px var(--cond)}
+.gname i{width:10px;height:10px;display:inline-block}
+.gcount{font:500 12px var(--mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.row{border-bottom:1px solid var(--line)}
+.row.seen{background:var(--soft)}
+.tap{display:flex;align-items:center;gap:12px;width:100%;min-height:50px;padding:6px 0;text-align:left}
+.box{width:22px;height:22px;flex-shrink:0;border:2px solid var(--grey);display:flex;align-items:center;justify-content:center}
+.box svg{display:none}
+.row.seen .box svg{display:block}
+.nm{display:flex;flex-direction:column;flex:1;min-width:0}
+.nm b{font-weight:600}
+.nm i{font-size:12.5px;color:var(--muted)}
+.tag{font:500 10.5px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+.tag.new{color:var(--myc)}.tag.warn{color:var(--warn)}
+.opt{display:none;flex-direction:column;gap:6px;padding:0 0 10px 34px}
+.row.seen .opt{display:flex}
+.chips{display:flex;flex-wrap:wrap;gap:4px}
+.chip{min-height:34px;padding:0 10px;border:1px solid var(--line);font:500 11.5px var(--mono)}
+.chip[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.mis{margin-top:16px;width:100%;min-height:48px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--fg);font:600 16px var(--cond)}
+.mis span{font:500 12px var(--mono);color:var(--muted)}
+.extra{margin-top:18px;display:flex;flex-direction:column;gap:6px}
+textarea{width:100%;min-height:64px;padding:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font:400 15px var(--body);border-radius:0;resize:vertical}
+
+.bar{position:fixed;left:0;right:0;bottom:0;background:var(--bg);border-top:1px solid var(--fg);padding-top:10px;padding-bottom:calc(env(safe-area-inset-bottom,0px) + 14px);z-index:5}
+.bar-in{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+.bar .hint{font:400 11.5px var(--mono);color:var(--muted)}
+.bar .btns{display:flex;gap:8px}
+.ghost{min-height:52px;padding:0 16px;border:1px solid var(--fg);font:500 12px var(--mono);letter-spacing:.06em;text-transform:uppercase}
+.primary{flex:1;min-height:52px;background:var(--fg);color:var(--bg);font:600 16px var(--cond)}
+
+.sub{padding-top:calc(env(safe-area-inset-top,0px) + 14px);padding-bottom:12px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--fg)}
+.back{min-height:40px;font:500 12px var(--mono);letter-spacing:.08em;text-transform:uppercase}
+.sub h2{margin:0;font:600 20px var(--cond)}
+.seg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border:1px solid var(--fg);margin-top:14px}
+.seg button{min-height:42px;font:500 11.5px var(--mono);letter-spacing:.06em;text-transform:uppercase}
 .seg button+button{border-left:1px solid var(--fg)}
 .seg button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
-.sub{display:flex;flex-direction:column;gap:6px;padding-left:18px}
-.sub .lbl{color:var(--muted)}
-.btn.primary{background:var(--fg);color:var(--bg);align-self:stretch}
-.hist-row{display:flex;justify-content:space-between;gap:8px;border-top:1px solid var(--line);padding:8px 0;font-size:13.5px}
-.hist-row .mono{font-size:12px;font-variant-numeric:tabular-nums;white-space:nowrap}
-
+.map{display:block;width:100%;height:auto;background:var(--soft);margin-top:12px;touch-action:manipulation}
+.pick{min-height:44px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
+.legend-row{display:flex;align-items:center;gap:10px;min-height:34px;border-bottom:1px solid var(--line);font-size:14px}
+.legend-row .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.legend-row .c{margin-left:auto;font:500 12px var(--mono);font-variant-numeric:tabular-nums}
+.note{font-size:13px;color:var(--muted);margin:0}
+.block{display:flex;flex-direction:column;gap:10px;padding:16px 0;border-bottom:1px solid var(--line)}
+.block h3{margin:0;font:600 17px var(--cond)}
+.hist-row{display:flex;justify-content:space-between;gap:8px;font-size:14px}
+.hist-row .mono{font:500 12px var(--mono);white-space:nowrap}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 128px);background:var(--fg);color:var(--bg);padding:10px 14px;font-size:14px;max-width:calc(100% - 40px);z-index:6}
+.state{padding:40px 0;color:var(--muted)}
+@media (prefers-reduced-motion: no-preference){.row{transition:background .15s}}
 </style>
-
 </head>
 <body>
-<div class="wrap">
-  <div class="top lbl"><span>Burnotvallei · 260 m</span><span id="dateLbl"></span></div>
-  <nav class="tabs" aria-label="Weergave">
-    <a href="#vandaag" id="tab-vandaag">Vandaag</a>
-    <a href="#kaart" id="tab-kaart">Kaart</a>
-    <a href="#bezoek" id="tab-bezoek">Bezoek</a>
-  </nav>
 
-  <p class="state" id="state">Gegevens laden: soorten, vondsten en weer van de vallei.</p>
+<div class="screen" id="s-main">
+  <header class="top pad">
+    <div class="topline">
+      <label class="datebtn" for="date"><span class="lbl" id="dateLbl">Vandaag</span><span class="lbl" aria-hidden="true">▾</span><input type="date" id="date" aria-label="Datum"></label>
+      <button type="button" class="lbl morebtn" id="moreBtn" aria-label="Meer: weer, bezoeken en export">Meer</button>
+    </div>
+    <div class="verdict"><h1 id="verdict">Laden…</h1><span class="count" id="count"></span></div>
+    <p class="say" id="say"></p>
+    <div class="stripes" id="stripes" role="img" aria-label="Bodemvocht van de laatste 14 dagen"></div>
+  </header>
+  <main class="pad" id="list"><p class="state" id="state">Soorten en weer van de vallei laden.</p></main>
+</div>
 
-  <section id="v-vandaag" hidden style="display:flex;flex-direction:column;gap:20px">
-    <div class="chips" role="group" aria-label="Datum">
-      <button class="chip" data-q="today" type="button">Vandaag</button>
-      <button class="chip" data-q="sat" type="button">Zaterdag</button>
-      <button class="chip" data-q="sun" type="button">Zondag</button>
-      <label class="lbl" for="date" style="position:absolute;left:-9999px">Andere datum</label>
-      <input type="date" id="date">
+<div class="bar pad" id="bar" hidden>
+  <div class="bar-in">
+    <span class="hint" id="hint">Tik aan wat je ziet. De rest telt als niet gezien.</span>
+    <div class="btns">
+      <button type="button" class="ghost" id="mapBtn">Kaart</button>
+      <button type="button" class="primary" id="doneBtn">Bezoek afronden</button>
     </div>
-    <div class="head">
-      <div class="row"><h1 id="verdict"></h1><span class="big" id="count"></span></div>
-      <p class="say" id="say"></p>
-    </div>
-    <div style="display:flex;flex-direction:column;gap:6px">
-      <div class="stripes" id="stripes" role="img"></div>
-      <div class="stripe-lbl" id="stripeLbl"></div>
-    </div>
-    <div id="guilds"></div>
-    <p class="always" id="always"></p>
-  </section>
+  </div>
+</div>
 
-  <section id="v-kaart" hidden style="display:flex;flex-direction:column;gap:16px">
-    <div class="head"><div class="row"><h1 id="mapTitle"></h1><span class="mono note" id="mapSub"></span></div></div>
-    <div class="chips" role="group" aria-label="Periode">
-      <button class="chip" id="mAll" type="button">Alle jaren</button>
-      <button class="chip" id="mSeason" type="button"></button>
+<div class="screen" id="s-kaart" hidden>
+  <div class="sub pad"><button type="button" class="back" data-back>← Terug</button><h2 id="mapTitle"></h2></div>
+  <div class="pad">
+    <div class="seg" role="group" aria-label="Welke plekken">
+      <button type="button" id="mToday" aria-pressed="true">Plekken voor vandaag</button>
+      <button type="button" id="mAll" aria-pressed="false">Alle vondsten</button>
     </div>
-    <svg class="map" id="map" role="img" aria-label="Kaart van de Burnotvallei met Route 1 en je vindplaatsen per leefwijze"></svg>
+    <svg class="map" id="map" role="img" aria-label="Kaart van de Burnotvallei met je vindplaatsen"></svg>
     <div class="pick" id="pick">Tik een stip voor soort en datum.</div>
     <div id="legend"></div>
-    <p class="note">Zwarte lijn: Route 1. Grijze lijnen: je gelogde wandelingen met GPX. Water, bomen en herkenningspunten volgen zodra je ze markeert.</p>
-  </section>
-
-  <section id="v-bezoek" hidden style="display:flex;flex-direction:column;gap:18px">
-    <div class="head"><div class="row"><h1>Bezoek loggen</h1><span class="mono note" id="vProg"></span></div>
-      <p class="say">Elke wandeling telt, ook een lege. Een "niet gezien" toetst de verwachting net zo goed als een vondst.</p></div>
-    <div class="sec">
-      <div class="fields">
-        <label class="field" for="vDatum">Datum<input type="date" id="vDatum"></label>
-      </div>
-      <div class="fields">
-        <label class="field" for="vStart">Start<span class="timepair"><input type="time" id="vStart"><button type="button" class="chip" data-now="vStart">Nu</button></span></label>
-        <label class="field" for="vEind">Einde<span class="timepair"><input type="time" id="vEind"><button type="button" class="chip" data-now="vEind">Nu</button></span></label>
-      </div>
-      <p class="note">De GPX uit Strava stuur je later samen met je export naar Claude, die het spoor koppelt op datum en uur.</p>
-      <div class="field">Bodem<div class="chips" id="vBodem"></div></div>
-      <div class="field">Weer nu<div class="chips" id="vWeer"></div></div>
-    </div>
-    <div class="sec">
-      <h2>Verwachte soorten</h2>
-      <p class="note">De soorten die de app voor deze dag verwacht. Antwoord per soort; bij gezien kan je stadium, aantal en zone aanduiden.</p>
-      <div id="vList"></div>
-      <button type="button" class="btn" id="vRest">Overige: niet gezien</button>
-    </div>
-    <div class="sec">
-      <h2>Verder</h2>
-      <label class="field" for="vExtra">Andere soorten<textarea id="vExtra" placeholder="bv. parelstuifzwammen, veel en rijp"></textarea></label>
-      <label class="field" for="vNotitie">Notitie<textarea id="vNotitie" placeholder="Microhabitat, primordia, vraatsporen…"></textarea></label>
-      <p class="note" id="vMsg" aria-live="polite"></p>
-      <button type="button" class="btn primary" id="vSave">Bezoek opslaan</button>
-    </div>
-    <div class="sec">
-      <h2>Laatste bezoeken</h2>
-      <div id="vHist"><p class="note">Opgeslagen bezoeken verschijnen hier.</p></div>
-      <p class="note" id="vCount"></p>
-      <div class="chips">
-        <button type="button" class="btn" id="vExport">Exporteer voor Claude</button>
-        <label class="btn" for="vImport" style="display:flex;align-items:center;cursor:pointer">Importeer bestand</label>
-        <input type="file" id="vImport" accept=".json,application/json" style="position:absolute;left:-9999px">
-      </div>
-      <p class="note">Je bezoeken staan op deze telefoon. Exporteer en stuur het bestand naar Claude; met Importeer laad je een door Claude aangevulde versie terug.</p>
-    </div>
-  </section>
-
-  <footer id="foot" hidden>
-    <p class="note" id="wxInfo"></p>
-    <button class="btn" type="button" id="wxBtn">Weer vernieuwen</button>
-    <p class="note" id="wxMsg" aria-live="polite"></p>
-  </footer>
+    <p class="note" style="padding:12px 0 40px">Zwarte lijn: Route 1. Grijze lijnen: wandelingen waarvan Claude het GPX-spoor koppelde.</p>
+  </div>
 </div>
+
+<div class="screen" id="s-meer" hidden>
+  <div class="sub pad"><button type="button" class="back" data-back>← Terug</button><h2>Meer</h2></div>
+  <div class="pad">
+    <div class="block">
+      <h3>Weer</h3>
+      <p class="note" id="wxInfo"></p>
+      <button type="button" class="ghost" id="wxBtn" style="align-self:flex-start">Weer vernieuwen</button>
+      <p class="note" id="wxMsg" aria-live="polite"></p>
+    </div>
+    <div class="block">
+      <h3>Laatste bezoeken</h3>
+      <div id="hist"></div>
+    </div>
+    <div class="block">
+      <h3>Delen met Claude</h3>
+      <p class="note">Je bezoeken staan op deze telefoon. Exporteer en stuur het bestand samen met je GPX naar Claude. Met Importeer laad je een aangevulde versie terug.</p>
+      <div class="chips">
+        <button type="button" class="ghost" id="exportBtn">Exporteer</button>
+        <label class="ghost" for="importFile" style="display:inline-flex;align-items:center;cursor:pointer">Importeer</label>
+        <input type="file" id="importFile" accept=".json,application/json" style="position:absolute;left:-9999px">
+      </div>
+      <p class="note" id="ioMsg" aria-live="polite"></p>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" hidden></div>
 
 <script>
 (function(){
@@ -212,8 +184,9 @@ const fmtD=d=>`${d.getUTCDate()} ${MN[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
 const fmtS=d=>`${d.getUTCDate()} ${MN[d.getUTCMonth()]}`;
 const nf=(x,n=1)=>x==null||isNaN(x)?'–':x.toFixed(n).replace('.',',');
 const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const KEYS=['rain','t','tmin','tsoil','sm'];
-let TRACKS=[], W=null, SP=[], FINDS=null, ROUTE=[], sel=null, mapSeason=false, open={};
+let W=null, SP=[], FINDS=null, ROUTE=[], VISITS=[], RES=[], mapToday=true, misOpen=false;
 
 function win(arr,i,n){const a=[];for(let j=i-n+1;j<=i;j++){if(j<0||arr[j]==null)return null;a.push(arr[j])}return a}
 const mean=a=>a?a.reduce((x,y)=>x+y,0)/a.length:null;
@@ -320,266 +293,212 @@ const TOXIC_NEAR=['Amanita phalloides','Amanita muscaria','Hypholoma fasciculare
 
 
 const GUILD={mycorrhiza:'m',hout:'s',strooisel:'s',parasiet:'p'};
-const GINFO={
-  m:{naam:'Mycorrhiza',uitleg:'Leeft samen met bomen. Komt meestal pas 1 à 2 weken na een natte periode.',col:'var(--myc)'},
-  s:{naam:'Saprotroof',uitleg:'Ruimt blad, takken en stronken op. Reageert snel op regen.',col:'var(--sap)'},
-  p:{naam:'Parasiet',uitleg:'Op levende bomen of op andere paddenstoelen.',col:'var(--par)'}
-};
+const GN={m:'Mycorrhiza',s:'Saprotroof',p:'Parasiet'};
+const GC={m:'var(--myc)',s:'var(--sap)',p:'var(--par)'};
+const DANGER={'Amanita phalloides':'dodelijk','Amanita pantherina':'dodelijk'};
 const lastDate=()=>new Date(W.start.getTime()+(W.rain.length-1)*DAY);
 const idx=d=>Math.round((d-W.start)/DAY);
+const pad2=n=>String(n).padStart(2,'0');
 function localToday(){const t=new Date();return new Date(Date.UTC(t.getFullYear(),t.getMonth(),t.getDate()))}
-function nextDow(dow){const t=localToday();const diff=(dow-t.getUTCDay()+7)%7||7;return new Date(t.getTime()+diff*DAY)}
-function icon(col,filled){
-  return `<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 8 A6.5 5.6 0 0 1 14.5 8 Z" fill="${filled?col:'none'}" stroke="${col}" stroke-width="${filled?0:1.3}"/><rect x="${filled?6.5:6.9}" y="8" width="${filled?3:2.2}" height="6.5" fill="${filled?col:'none'}" stroke="${col}" stroke-width="${filled?0:1.3}"/></svg>`;
-}
-function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+const nowT=()=>{const d=new Date();return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`};
+const store={get(k,f){try{const v=localStorage.getItem(k);return v==null?f:JSON.parse(v)}catch(e){return f}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
 
-// ---------- Vandaag
-function renderToday(){
-  const d=parse($('date').value); const i=idx(d);
-  $('dateLbl').textContent=d.toLocaleDateString('nl-BE',{weekday:'short',day:'numeric',month:'short',timeZone:'UTC'});
-  document.querySelectorAll('[data-q]').forEach(b=>b.setAttribute('aria-pressed',String(iso(qDate(b.dataset.q))===$('date').value)));
-  if(i<30||i>W.rain.length-1){
-    $('verdict').textContent='Geen weer voor deze dag';$('count').textContent='';
-    $('say').textContent=`Er zijn weergegevens tot ${fmtD(lastDate())}. Werk het weer onderaan bij, of kies een eerdere datum.`;
-    $('stripes').replaceChildren();$('stripeLbl').replaceChildren();$('guilds').replaceChildren();$('always').textContent='';return;
-  }
-  const f=features(i);
-  const res=SP.filter(s=>s.g!=='overjarig').map(s=>score(s,d,f));
-  const high=res.filter(r=>r.final>=0.5), mid=res.filter(r=>r.final>=0.22&&r.final<0.5);
-  const v=high.length>=15?'hoog':high.length>=6?'matig':'laag';
-  $('verdict').textContent='Verwachting: '+v;
-  $('count').textContent=(high.length+mid.length)+' soorten';
-  const parts=[];
-  if(f.wetRun>0) parts.push(`Bodemvocht ligt <b>${f.wetRun} dag${f.wetRun>1?'en':''}</b> boven de drempel (0,34). Mycorrhizasoorten volgen meestal 5 tot 10 dagen later.`);
-  else parts.push(`Bodemvocht ligt onder de drempel (${nf(f.sm,2)} tegen 0,34). Weinig nieuwe bodemsoorten.`);
-  if(f.soakAgo!=null&&f.soakAgo<=4) parts.push(`${f.soakAgo===0?'Vandaag':f.soakAgo+' dag'+(f.soakAgo>1?'en':'')+' geleden'} viel minstens 15 mm in 3 dagen: snelle opruimers komen nu op.`);
-  if(f.frost7>0) parts.push(`${f.frost7} vorstnacht${f.frost7>1?'en':''} in de laatste week.`);
-  parts.push(`Gemiddeld ${nf(f.t7)} °C de laatste 7 dagen.`);
-  $('say').innerHTML=parts.join(' ');
-  // stripes
-  const st=$('stripes'); st.replaceChildren(); const lb=$('stripeLbl'); lb.replaceChildren();
-  const lo=[214,196,160], hi=[24,92,60]; let wetFrom=-1;
-  for(let k=13;k>=0;k--){const j=i-k; const s=W.sm[j]; const t=s==null?0:Math.max(0,Math.min(1,(s-0.26)/(0.42-0.26)));
-    const c=lo.map((a,n)=>Math.round(a+(hi[n]-a)*t)); const sp=document.createElement('span'); sp.style.background=`rgb(${c})`;
-    if(parse(iso(new Date(W.start.getTime()+j*DAY)))>=W.fcFrom) sp.className='fc';
-    sp.title=`${fmtS(new Date(W.start.getTime()+j*DAY))}: ${nf(s,2)}`; st.append(sp); if(s!=null&&s>=0.34&&wetFrom<0&&13-k>=14-f.wetRun) wetFrom=13-k;}
-  st.setAttribute('aria-label',`Bodemvocht van ${fmtS(new Date(d.getTime()-13*DAY))} tot ${fmtS(d)}, van droog naar nat`);
-  const run=Math.min(14,f.wetRun);
-  const a=document.createElement('span'); a.style.gridColumn=`span ${14-run||14}`; a.textContent=`${fmtS(new Date(d.getTime()-13*DAY))} · bodemvocht${W.fcFrom<=d?' · gearceerd = verwachting':''}`; lb.append(a);
-  if(run>0&&run<14){const b=document.createElement('span');b.className='wet';b.style.gridColumn=`span ${run}`;b.textContent=`${run} d nat`;lb.append(b)}
-  // guild rows
-  const g=$('guilds'); g.replaceChildren();
+// ---------- de ronde (huidige wandeling)
+const RKEY='boswijzer-ronde-v1', VKEY='boswijzer-bezoeken-v1', WXKEY='boswijzer-weer-v1';
+const blankR=()=>({datum:iso(localToday()),start:null,seen:{},extra:''});
+let R=store.get(RKEY,null)||blankR();
+if(!Object.keys(R.seen).length&&!R.extra&&R.datum!==iso(localToday())) R=blankR();
+const saveR=()=>store.set(RKEY,R);
+
+// ---------- hoofdscherm
+function render(){
+  const d=parse(R.datum); const i=idx(d);
+  const today=R.datum===iso(localToday());
+  $('date').value=R.datum;
+  $('dateLbl').textContent=today?'Vandaag · '+d.toLocaleDateString('nl-BE',{day:'numeric',month:'short',timeZone:'UTC'}):d.toLocaleDateString('nl-BE',{weekday:'short',day:'numeric',month:'short',timeZone:'UTC'});
+  let f=null, wi=i, stale=false;
+  if(i>W.rain.length-1&&i-(W.rain.length-1)<=7){wi=W.rain.length-1;stale=true}
+  if(wi>=30&&wi<=W.rain.length-1){f=features(wi); RES=SP.filter(s=>s.g!=='overjarig').map(s=>score(s,d,f));}
+  else RES=SP.filter(s=>s.g!=='overjarig').map(s=>({s,final:seasonAt(s,d),base:seasonAt(s,d),why:[],own:false}));
+  const high=RES.filter(r=>r.final>=0.5).sort((a,b)=>b.final-a.final);
+  const mid=RES.filter(r=>r.final>=0.22&&r.final<0.5).sort((a,b)=>b.final-a.final);
+  $('verdict').textContent='Verwachting: '+(high.length>=15?'hoog':high.length>=6?'matig':'laag');
+  $('count').textContent=high.length+' soorten';
+  // de zin
+  if(f){
+    const p=[];
+    p.push(f.wetRun>0?`Bodem ${f.wetRun} dag${f.wetRun>1?'en':''} nat.`:`Bodem droog (${nf(f.sm,2)}).`);
+    const r2=(W.rain[wi]||0)+(W.rain[wi-1]||0);
+    if(r2>=5) p.push(`${nf(r2,0)} mm regen in 2 dagen.`);
+    if(f.frost7>0) p.push(`${f.frost7} vorstnacht${f.frost7>1?'en':''} deze week.`);
+    p.push(f.wetRun>=7?'Mycorrhiza zou nu volop moeten komen.':f.wetRun>0?'Opruimers komen eerst; mycorrhiza volgt 5 tot 10 dagen na de natte start.':'Weinig nieuwe bodemsoorten; kijk vooral op hout.');
+    if(stale) p.push(`(Weer tot ${fmtS(lastDate())}; vernieuwt met bereik.)`);
+    $('say').textContent=p.join(' ');
+  } else $('say').textContent=`Geen weer voor deze dag; de lijst volgt alleen het seizoen.`;
+  // strepen
+  const st=$('stripes'); st.replaceChildren();
+  const lo=[214,196,160], hi=[24,92,60];
+  for(let k=13;k>=0;k--){const j=Math.min(wi,W.rain.length-1)-k; const s=W.sm[j]; const t=s==null?0:Math.max(0,Math.min(1,(s-0.26)/(0.42-0.26)));
+    const sp=document.createElement('span'); sp.style.background=`rgb(${lo.map((a,n)=>Math.round(a+(hi[n]-a)*t))})`;
+    if(new Date(W.start.getTime()+j*DAY)>=W.fcFrom) sp.className='fc'; st.append(sp);}
+  // lijst
+  const L=$('list'); L.replaceChildren();
   for(const k of ['m','s','p']){
-    const H=high.filter(r=>GUILD[r.s.g]===k).sort((a,b)=>b.final-a.final), M=mid.filter(r=>GUILD[r.s.g]===k).sort((a,b)=>b.final-a.final);
-    const info=GINFO[k]; const box=document.createElement('div'); box.className='guild';
-    const id='list-'+k;
-    box.innerHTML=`<button type="button" aria-expanded="${!!open[k]}" aria-controls="${id}"><span class="gh"><span class="gn">${info.naam}</span><span class="gc">${H.length}${M.length?' + '+M.length:''}</span></span><span class="gd">${info.uitleg}</span><span class="icons">${H.map(()=>icon(info.col,true)).join('')}${M.map(()=>icon(info.col,false)).join('')}</span></button>`;
-    const list=document.createElement('div'); list.className='list'; list.id=id; list.hidden=!open[k];
-    for(const r of [...H,...M]) list.append(spRow(r));
-    if(!H.length&&!M.length){const p=document.createElement('p');p.className='note';p.textContent='Nu niets verwacht in deze groep.';list.append(p)}
-    box.querySelector('button').addEventListener('click',e=>{open[k]=!open[k];list.hidden=!open[k];e.currentTarget.setAttribute('aria-expanded',String(!!open[k]))});
-    box.append(list); g.append(box);
+    const items=high.filter(r=>GUILD[r.s.g]===k); if(!items.length) continue;
+    const n=items.filter(r=>R.seen[r.s.sci]).length;
+    const g=document.createElement('section'); g.className='group';
+    g.innerHTML=`<div class="ghead"><span class="gname"><i style="background:${GC[k]}"></i>${GN[k]}</span><span class="gcount">${n?n+' / '+items.length+' gezien':items.length}</span></div>`;
+    for(const r of items) g.append(row(r));
+    L.append(g);
   }
-  const al=SP.filter(s=>s.g==='overjarig');
-  $('always').textContent=al.length?`Gevuld icoon = goede kans, open icoon = misschien. Daarnaast staan ${al.length} overjarige houtzwammen het hele jaar, zoals ${al.slice(0,2).map(s=>s.nl.toLowerCase()).join(' en ')}.`:'Gevuld icoon = goede kans, open icoon = misschien.';
+  if(mid.length){
+    const b=document.createElement('button'); b.type='button'; b.className='mis'; b.setAttribute('aria-expanded',String(misOpen));
+    const nSeenMid=mid.filter(r=>R.seen[r.s.sci]).length;
+    b.innerHTML=`Misschien ook<span>${mid.length} soorten${nSeenMid?' · '+nSeenMid+' gezien':''} ${misOpen?'▴':'▾'}</span>`;
+    b.addEventListener('click',()=>{misOpen=!misOpen;render()}); L.append(b);
+    if(misOpen){const g=document.createElement('section'); for(const r of mid) g.append(row(r)); L.append(g)}
+  }
+  const ex=document.createElement('div'); ex.className='extra';
+  ex.innerHTML=`<label class="lbl" for="extra">Andere soorten of notitie</label><textarea id="extra" placeholder="bv. parelstuifzwammen, veel en rijp"></textarea>`;
+  L.append(ex); const ta=ex.querySelector('textarea'); ta.value=R.extra; ta.addEventListener('input',()=>{R.extra=ta.value;saveR();bar()});
+  bar();
 }
-function spRow(r){
-  const s=r.s, el=document.createElement('div'); el.className='sp';
-  const tags=[]; if(!s.own.length) tags.push('<span class="tag new">Nieuw voor jou</span>'); else tags.push(`<span class="tag">Jij: ${s.own.map(m=>MN[m-1]).join(', ')}</span>`);
-  if(r.final<0.5) tags.push('<span class="tag">Misschien</span>');
-  const e=EAT[s.sci]; if(e) tags.push(`<span class="tag">${e.k==='ja'?'Eetbaar':'Eetbaar met kennis'}</span>`);
-  if(TOXIC_NEAR.includes(s.sci)||s.tox) tags.push(`<span class="tag warn">${esc(s.tox||'Giftig')}</span>`);
-  const why=r.why.slice(0,3).map(w=>`<li>${esc(w)}</li>`).join('');
-  el.innerHTML=`<div class="n"><span class="nl">${esc(s.nl)}</span></div><span class="sci">${esc(s.sci)}</span><div class="tags">${tags.join('')}</div>${why?`<ul class="why">${why}</ul>`:''}${FACTS[s.sci]?`<span class="fact">${esc(FACTS[s.sci])}</span>`:''}${e&&e.l?`<span class="note">Let op: ${esc(e.l)}</span>`:''}`;
+const STADIA=['jong','rijp','oud'], AANTAL=['1','2–10','10+'];
+function row(r){
+  const s=r.s, k=GUILD[s.g], a=R.seen[s.sci];
+  const el=document.createElement('div'); el.className='row'+(a?' seen':'');
+  const tag=!s.own.length?'<span class="tag new">nieuw voor jou</span>':DANGER[s.sci]?`<span class="tag warn">${DANGER[s.sci]}</span>`:(typeof TOXIC_NEAR!=='undefined'&&TOXIC_NEAR.includes(s.sci))||s.tox?'<span class="tag warn">giftig</span>':'';
+  el.innerHTML=`<button type="button" class="tap" aria-pressed="${!!a}"><span class="box" style="${a?`background:${GC[k]};border-color:${GC[k]}`:''}"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M2 7.5 L5.5 11 L12 3.5" fill="none" stroke="var(--on)" stroke-width="2.4" stroke-linecap="square"/></svg></span><span class="nm"><b>${esc(s.nl)}</b><i>${esc(s.sci)}</i></span>${tag}</button>
+  <div class="opt"><span class="lbl">Optioneel</span><div class="chips"></div></div>`;
+  el.querySelector('.tap').addEventListener('click',()=>{
+    if(R.seen[s.sci]) delete R.seen[s.sci]; else {R.seen[s.sci]={st:'',aa:''}; if(!R.start&&R.datum===iso(localToday())) R.start=nowT();}
+    saveR(); render();
+  });
+  if(a){const c=el.querySelector('.chips');
+    for(const [key,opts] of [['st',STADIA],['aa',AANTAL]]) for(const o of opts){const b=document.createElement('button');b.type='button';b.className='chip';b.textContent=o;b.setAttribute('aria-pressed',String(a[key]===o));
+      b.addEventListener('click',()=>{a[key]=a[key]===o?'':o;saveR();b.setAttribute('aria-pressed',String(a[key]===o));c.querySelectorAll('.chip').forEach(x=>{const kk=STADIA.includes(x.textContent)?'st':'aa';x.setAttribute('aria-pressed',String(a[kk]===x.textContent))})});c.append(b)}}
   return el;
 }
-function qDate(q){return q==='today'?localToday():q==='sat'?nextDow(6):nextDow(0)}
+let confirmEmpty=0;
+function bar(){
+  const n=Object.keys(R.seen).length;
+  $('doneBtn').textContent=confirmEmpty?'Leeg bezoek? Tik nog eens':`Bezoek afronden · ${n} gezien`;
+  $('hint').textContent=R.start?`Gestart ${R.start} · niet aangetikt telt als niet gezien`:'Tik aan wat je ziet. De rest telt als niet gezien.';
+}
+function toast(t){const e=$('toast');e.textContent=t;e.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>e.hidden=true,3500)}
+$('doneBtn').addEventListener('click',()=>{
+  const n=Object.keys(R.seen).length;
+  if(!n&&!R.extra&&!confirmEmpty){confirmEmpty=1;bar();setTimeout(()=>{confirmEmpty=0;bar()},4000);return}
+  confirmEmpty=0;
+  const today=R.datum===iso(localToday());
+  const eind=today?nowT():null; const start=R.start||(today?eind:null);
+  let duur=null; if(start&&eind){const [h1,m1]=start.split(':').map(Number),[h2,m2]=eind.split(':').map(Number);duur=(h2*60+m2)-(h1*60+m1);if(duur<0)duur=null}
+  const lijst=RES.filter(r=>r.final>=0.5);
+  const extraSeen=RES.filter(r=>r.final<0.5&&R.seen[r.s.sci]);
+  const soorten=[...lijst,...extraSeen].map(r=>{const a=R.seen[r.s.sci];return {soort:r.s.sci,nl:r.s.nl,leefwijze:GN[GUILD[r.s.g]].toLowerCase(),gezien:!!a,stadium:a&&a.st?[a.st]:[],aantal:a&&a.aa||null,kans:Math.round(r.final*100)/100}});
+  const doc={id:R.datum+'-'+Date.now().toString(36),datum:R.datum,start,eind,duur_min:duur,afstand_km:null,spoor:null,soorten,n_lijst:lijst.length,n_gezien:soorten.filter(x=>x.gezien).length,extra:R.extra,notitie:'',bron:'Boswijzer',opgeslagen:new Date().toISOString()};
+  VISITS.push(doc);
+  if(!store.set(VKEY,VISITS)){toast('Opslaan lukte niet: het geheugen is vol. Exporteer je bezoeken via Meer.');VISITS.pop();return}
+  R=blankR(); saveR(); misOpen=false; render(); window.scrollTo(0,0);
+  toast(`Bezoek opgeslagen · ${doc.n_gezien} gezien`);
+});
+$('date').addEventListener('change',e=>{if(!e.target.value) return; R.datum=e.target.value; if(R.datum!==iso(localToday())) R.start=null; saveR(); render()});
 
-// ---------- Kaart
-const KCOL={m:'var(--myc)',s:'var(--sap)',p:'var(--par)',o:'var(--grey)'};
-const KNAAM={m:'Mycorrhiza',s:'Saprotroof',p:'Parasiet',o:'Onbepaald of slijmzwam'};
+// ---------- schermen
+function show(){
+  const v=location.hash==='#kaart'?'kaart':location.hash==='#meer'?'meer':'main';
+  $('s-main').hidden=v!=='main'; $('bar').hidden=v!=='main'||!W; $('s-kaart').hidden=v!=='kaart'; $('s-meer').hidden=v!=='meer';
+  if(v==='kaart') renderMap(); if(v==='meer') renderMeer(); window.scrollTo(0,0);
+}
+$('mapBtn').addEventListener('click',()=>{location.hash='kaart'});
+$('moreBtn').addEventListener('click',()=>{location.hash='meer'});
+document.querySelectorAll('[data-back]').forEach(b=>b.addEventListener('click',()=>{if(history.length>1)history.back();else location.hash=''}));
+window.addEventListener('hashchange',show);
+
+// ---------- kaart
+const KC={m:'var(--myc)',s:'var(--sap)',p:'var(--par)',o:'var(--grey)'};
+const KN={m:'Mycorrhiza',s:'Saprotroof',p:'Parasiet',o:'Onbepaald of slijmzwam'};
 function renderMap(){
   const b=FINDS.bbox, kx=Math.cos(50.356*Math.PI/180), Wd=350, sx=Wd/((b.e-b.w)*kx), Hd=Math.round((b.n-b.s)*sx);
   const P=(la,lo)=>[((lo-b.w)*kx*sx).toFixed(1),((b.n-la)*sx).toFixed(1)];
-  const d=parse($('date').value); const m=d.getUTCMonth(); const ms=[m,(m+1)%12];
-  $('mSeason').textContent=`${MN[ms[0]]}–${MN[ms[1]]}`;
-  $('mAll').setAttribute('aria-pressed',String(!mapSeason)); $('mSeason').setAttribute('aria-pressed',String(mapSeason));
-  const L=FINDS.list.filter(f=>!mapSeason||ms.includes(+f[2].slice(5,7)-1));
-  const order={o:0,s:1,p:2,m:3};
-  const pts=L.map((f,n)=>({f,n})).sort((a,c)=>order[a.f[5]]-order[c.f[5]]);
+  const want=new Set(RES.filter(r=>r.final>=0.22).map(r=>r.s.sci));
+  const L=FINDS.list.filter(f=>!mapToday||want.has(f[4]));
+  $('mToday').setAttribute('aria-pressed',String(mapToday)); $('mAll').setAttribute('aria-pressed',String(!mapToday));
+  const ord={o:0,s:1,p:2,m:3};
+  const pts=L.slice().sort((a,c)=>ord[a[5]]-ord[c[5]]);
   const svg=$('map'); svg.setAttribute('viewBox',`0 0 ${Wd} ${Hd}`);
-  const route=ROUTE.map(p=>P(p[0],p[1]).join(',')).join(' ');
-  const mPerPx=((b.e-b.w)*111320*kx)/Wd; const bar=100/mPerPx;
-  const tracks=TRACKS.map(t=>`<polyline points="${t.pts.map(p=>P(p[0],p[1]).join(',')).join(' ')}" fill="none" stroke="var(--grey)" stroke-width="1.2" stroke-linejoin="round"/>`).join('');
-  svg.innerHTML=tracks+`<polyline points="${route}" fill="none" stroke="var(--fg)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`+
-    pts.map(({f})=>{const [x,y]=P(f[0],f[1]);return `<circle cx="${x}" cy="${y}" r="${f[5]==='o'?2.2:3}" fill="${KCOL[f[5]]}" data-k="${esc(f[3])}|${esc(f[2])}"/>`}).join('')+
+  const tracks=VISITS.map(v=>v.spoor).filter(Boolean).map(t=>`<polyline points="${t.pts.map(p=>P(p[0],p[1]).join(',')).join(' ')}" fill="none" stroke="var(--grey)" stroke-width="1.2" stroke-linejoin="round"/>`).join('');
+  const mpp=((b.e-b.w)*111320*kx)/Wd, bar=100/mpp;
+  svg.innerHTML=tracks+`<polyline points="${ROUTE.map(p=>P(p[0],p[1]).join(',')).join(' ')}" fill="none" stroke="var(--fg)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`+
+    pts.map(f=>{const [x,y]=P(f[0],f[1]);return `<circle cx="${x}" cy="${y}" r="${mapToday?4:(f[5]==='o'?2.2:3)}" fill="${KC[f[5]]}" data-k="${esc(f[3])}|${esc(f[2])}"/>`}).join('')+
     `<line x1="12" y1="${Hd-12}" x2="${(12+bar).toFixed(1)}" y2="${Hd-12}" stroke="var(--fg)" stroke-width="2"/><text x="${(16+bar).toFixed(1)}" y="${Hd-9}" font-family="IBM Plex Mono, monospace" font-size="9" fill="var(--fg)">100 m</text>`+
     `<text x="${Wd-14}" y="16" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="var(--fg)">N</text><line x1="${Wd-14}" y1="20" x2="${Wd-14}" y2="32" stroke="var(--fg)" stroke-width="1.5"/>`;
-  const years=[...new Set(FINDS.list.map(f=>f[2].slice(0,4)))].sort();
-  $('mapTitle').textContent=`${L.length} vondsten`;
-  $('mapSub').textContent=mapSeason?`${MN[ms[0]]} en ${MN[ms[1]]}, alle jaren`:`${years[0]}–${years[years.length-1]}`;
+  const spp=new Set(L.map(f=>f[4])).size;
+  $('mapTitle').textContent=mapToday?`${L.length} plekken · ${spp} soorten`:`${L.length} vondsten`;
   const lg=$('legend'); lg.replaceChildren();
-  for(const k of ['m','s','p','o']){const n=L.filter(f=>f[5]===k).length; const r=document.createElement('div'); r.className='legend-row'; r.innerHTML=`<span class="dot" style="background:${KCOL[k]}"></span><span>${KNAAM[k]}</span><span class="c">${n}</span>`; lg.append(r)}
+  for(const k of ['m','s','p','o']){const n=L.filter(f=>f[5]===k).length; if(!n) continue; const r=document.createElement('div'); r.className='legend-row'; r.innerHTML=`<span class="dot" style="background:${KC[k]}"></span><span>${KN[k]}</span><span class="c">${n}</span>`; lg.append(r)}
+  $('pick').textContent=mapToday?'Plekken waar je soorten vond die nu verwacht worden. Tik een stip voor soort en datum.':'Tik een stip voor soort en datum.';
 }
-$('map').addEventListener('click',e=>{const c=e.target.closest('circle'); if(!c) return; const [n,dt]=c.dataset.k.split('|'); $('pick').textContent=`${n} · ${fmtD(parse(dt))}`;});
-$('mAll').addEventListener('click',()=>{mapSeason=false;renderMap()});
-$('mSeason').addEventListener('click',()=>{mapSeason=true;renderMap()});
+$('map').addEventListener('click',e=>{const c=e.target.closest('circle'); if(!c) return; const [n,dt]=c.dataset.k.split('|'); $('pick').textContent=`${n} · ${fmtD(parse(dt))}`});
+$('mToday').addEventListener('click',()=>{mapToday=true;renderMap()});
+$('mAll').addEventListener('click',()=>{mapToday=false;renderMap()});
 
-// ---------- weer bijwerken
+// ---------- meer
+function wxInfo(){const l=lastDate();$('wxInfo').textContent=`Open-Meteo voor de vallei, tot ${fmtD(l)}${W.fcFrom<=l?`; vanaf ${fmtD(W.fcFrom)} is het een verwachting`:''}. Vernieuwt vanzelf bij elke opening met bereik.`}
+function renderMeer(){
+  wxInfo();
+  const h=$('hist'); const list=VISITS.slice().sort((a,b)=>b.datum.localeCompare(a.datum)||String(b.opgeslagen).localeCompare(String(a.opgeslagen)));
+  if(!list.length){h.innerHTML='<p class="note">Nog geen bezoeken.</p>';return}
+  h.replaceChildren(...list.slice(0,12).map(x=>{const r=document.createElement('div');r.className='hist-row';
+    r.innerHTML=`<span>${esc(fmtD(parse(x.datum)))}${x.duur_min?' · '+x.duur_min+' min':''}${x.spoor?' · spoor':''}</span><span class="mono">${x.n_gezien??'–'} gezien</span>`;return r}));
+}
 const FC_URL='https://api.open-meteo.com/v1/forecast?latitude=50.355&longitude=4.845&daily=precipitation_sum,temperature_2m_mean,temperature_2m_min,soil_temperature_0_to_7cm_mean,soil_moisture_0_to_7cm_mean&past_days=92&forecast_days=16&timezone=Europe%2FBrussels';
-function wxInfo(){const l=lastDate();$('wxInfo').textContent=`Weer: Open-Meteo voor de vallei, tot ${fmtD(l)}${W.fcFrom<=l?`; vanaf ${fmtD(W.fcFrom)} is het een verwachting`:''}.`}
 function merge(daily){
   const map={rain:'precipitation_sum',t:'temperature_2m_mean',tmin:'temperature_2m_min',tsoil:'soil_temperature_0_to_7cm_mean',sm:'soil_moisture_0_to_7cm_mean'};
-  if(!daily||!daily.time) throw new Error('geen dagelijkse reeks gevonden');
+  if(!daily||!daily.time) throw new Error('geen dagelijkse reeks');
   daily.time.forEach((ts,j)=>{const i=idx(parse(ts)); if(i<0) return; while(W.rain.length<i) KEYS.forEach(k=>W[k].push(null)); KEYS.forEach(k=>{const v=daily[map[k]]?.[j]; if(v!=null) W[k][i]=v; else if(W[k][i]===undefined) W[k][i]=null;});});
   W.fcFrom=localToday();
 }
-const WXKEY='boswijzer-weer-v1';
-function saveWx(){try{localStorage.setItem(WXKEY,JSON.stringify({start:iso(W.start),fcFrom:iso(W.fcFrom),...Object.fromEntries(KEYS.map(k=>[k,W[k]]))}))}catch(e){}}
 async function fetchWx(manual){
   const msg=$('wxMsg'); if(manual) msg.textContent='Bezig met ophalen…';
-  try{const r=await fetch(FC_URL,{cache:'no-store'}); if(!r.ok) throw new Error('status '+r.status); const j=await r.json(); merge(j.daily); saveWx(); wxInfo(); renderAll(); renderVisit(); msg.textContent=`Weer bijgewerkt tot ${fmtD(lastDate())}.`}
-  catch(e){msg.textContent=navigator.onLine===false?'Geen bereik: de app gebruikt het laatst bewaarde weer.':`Weer ophalen lukte niet (${e.message}). De app gebruikt het laatst bewaarde weer.`}
+  try{const r=await fetch(FC_URL,{cache:'no-store'}); if(!r.ok) throw new Error('status '+r.status); merge((await r.json()).daily);
+    store.set(WXKEY,{start:iso(W.start),fcFrom:iso(W.fcFrom),...Object.fromEntries(KEYS.map(k=>[k,W[k]]))});
+    if(manual) msg.textContent=`Bijgewerkt tot ${fmtD(lastDate())}.`; wxInfo(); render();}
+  catch(e){ if(manual) msg.textContent=navigator.onLine===false?'Geen bereik: de app gebruikt het laatst bewaarde weer.':`Ophalen lukte niet (${e.message}).`}
 }
 $('wxBtn').addEventListener('click',()=>fetchWx(true));
-
-
-// ---------- Bezoek
-const BODEM=['droog','vochtig','doorweekt'], WEERNU=['droog','regen','mist'], STADIA=['jong','rijp','vergaan'], AANTAL=['1','2–10','meer dan 10'], ZONES=['A','B','C','D','E'];
-const DKEY='boswijzer-bezoek-v1';
-const pad=n=>String(n).padStart(2,'0');
-const todayL=()=>{const d=new Date();return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`};
-const nowT=()=>{const d=new Date();return `${pad(d.getHours())}:${pad(d.getMinutes())}`};
-const blankV=()=>({datum:todayL(),start:'',eind:'',route:'',bodem:'',weer:'',soorten:{},extra:'',notitie:''});
-let V=blankV(), ROUTES=['Route 1'];
-try{const r=localStorage.getItem(DKEY); if(r) V=Object.assign(blankV(),JSON.parse(r))}catch(e){}
-const keepV=()=>{try{localStorage.setItem(DKEY,JSON.stringify(V))}catch(e){}};
-function chipSet(el,opts,cur,pick){el.replaceChildren(...opts.map(o=>{const b=document.createElement('button');b.type='button';b.className='chip';b.textContent=o;b.setAttribute('aria-pressed',String(cur===o));b.addEventListener('click',()=>pick(cur===o?'':o));return b}))}
-function targets(){
-  const d=parse(V.datum||todayL()); const i=idx(d);
-  if(i<30||i>W.rain.length-1){ // geen weer: val terug op seizoen en eigen maanden
-    const m=d.getUTCMonth()+1; return SP.filter(s=>s.g!=='overjarig'&&(seasonAt(s,d)>=0.45||s.own.includes(m))).map(s=>({s,final:seasonAt(s,d)}));
-  }
-  const f=features(i); return SP.filter(s=>s.g!=='overjarig').map(s=>score(s,d,f)).filter(r=>r.final>=0.22).sort((a,b)=>b.final-a.final);
-}
-
-function parseGpx(text){
-  const x=new DOMParser().parseFromString(text,'application/xml');
-  if(x.querySelector('parsererror')) throw new Error('geen geldig GPX-bestand');
-  const pts=[...x.getElementsByTagName('trkpt')].map(p=>({la:+p.getAttribute('lat'),lo:+p.getAttribute('lon'),t:p.getElementsByTagName('time')[0]?.textContent||null})).filter(p=>isFinite(p.la)&&isFinite(p.lo));
-  if(pts.length<2) throw new Error('geen spoor gevonden in dit bestand');
-  let km=0; for(let i=1;i<pts.length;i++){const a=pts[i-1],b=pts[i];const dy=(b.la-a.la)*111.32,dx=(b.lo-a.lo)*111.32*Math.cos(a.la*Math.PI/180);km+=Math.hypot(dx,dy)}
-  const t0=pts[0].t?new Date(pts[0].t):null, t1=pts[pts.length-1].t?new Date(pts[pts.length-1].t):null;
-  const step=Math.max(1,Math.ceil(pts.length/400));
-  const sp=pts.filter((p,i)=>i%step===0||i===pts.length-1).map(p=>[Math.round(p.la*1e5)/1e5,Math.round(p.lo*1e5)/1e5]);
-  const loc=d=>d?d.toLocaleTimeString('nl-BE',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/Brussels'}):null;
-  const day=t0?t0.toLocaleDateString('sv-SE',{timeZone:'Europe/Brussels'}):null;
-  const naam=x.querySelector('trk > name')?.textContent||null;
-  return {datum:day,start:loc(t0),eind:loc(t1),duur_min:t0&&t1?Math.round((t1-t0)/60000):null,afstand_km:Math.round(km*100)/100,naam,pts:sp};
-}
-function gpxLine(g){return g?`Spoor: ${g.naam?esc(g.naam)+' · ':''}${g.start||'?'}–${g.eind||'?'} · ${g.duur_min??'?'} min · ${nf(g.afstand_km,1)} km`:''}
-for(const id of ['vStart','vEind']) $(id).addEventListener('change',e=>{V[id==='vStart'?'start':'eind']=e.target.value;keepV()});
-document.querySelectorAll('[data-now]').forEach(b=>b.addEventListener('click',()=>{const id=b.dataset.now;V[id==='vStart'?'start':'eind']=nowT();keepV();renderVisit()}));
-
-function renderVisit(){
-  $('vDatum').value=V.datum; $('vStart').value=V.start; $('vEind').value=V.eind; $('vExtra').value=V.extra; $('vNotitie').value=V.notitie;
-  chipSet($('vBodem'),BODEM,V.bodem,v=>{V.bodem=v;keepV();renderVisit()});
-  chipSet($('vWeer'),WEERNU,V.weer,v=>{V.weer=v;keepV();renderVisit()});
-  const T=targets(); const L=$('vList'); L.replaceChildren();
-  for(const r of T){
-    const s=r.s, a=V.soorten[s.sci]||{}, k=GUILD[s.g];
-    const row=document.createElement('div'); row.className='vs';
-    row.innerHTML=`<div class="h"><span class="nm"><span class="sw" style="background:${GINFO[k].col}" aria-hidden="true"></span><span><b style="font-weight:600">${esc(s.nl)}</b><br><span class="sci">${esc(s.sci)}</span></span></span></div>`;
-    const seg=document.createElement('div'); seg.className='seg'; seg.setAttribute('role','group'); seg.setAttribute('aria-label',s.nl);
-    for(const [val,txt] of [['niet','Niet'],['gezien','Gezien']]){const b=document.createElement('button');b.type='button';b.textContent=txt;b.setAttribute('aria-pressed',String(a.s===val));
-      b.addEventListener('click',()=>{if(a.s===val) delete V.soorten[s.sci]; else V.soorten[s.sci]=val==='gezien'?{s:'gezien',stadium:a.stadium||[],aantal:a.aantal||'',zone:a.zone||''}:{s:'niet'}; keepV(); renderVisit()}); seg.append(b)}
-    row.querySelector('.h').append(seg);
-    if(a.s==='gezien'){
-      const sub=document.createElement('div'); sub.className='sub';
-      const mk=(lab)=>{const l=document.createElement('span');l.className='lbl';l.textContent=lab;const c=document.createElement('div');c.className='chips';sub.append(l,c);return c};
-      const c1=mk('Stadium'); for(const st of STADIA){const b=document.createElement('button');b.type='button';b.className='chip';b.textContent=st;const on=(a.stadium||[]).includes(st);b.setAttribute('aria-pressed',String(on));
-        b.addEventListener('click',()=>{const set=new Set(a.stadium||[]);on?set.delete(st):set.add(st);a.stadium=STADIA.filter(x=>set.has(x));keepV();renderVisit()});c1.append(b)}
-      chipSet(mk('Aantal'),AANTAL,a.aantal,v=>{a.aantal=v;keepV();renderVisit()});
-      chipSet(mk('Zone op Route 1 (als je die liep)'),ZONES,a.zone,v=>{a.zone=v;keepV();renderVisit()});
-      row.append(sub);
-    }
-    L.append(row);
-  }
-  if(!T.length) L.innerHTML='<p class="note">Voor deze datum verwacht de app niets. Noteer wat je zag onder Andere soorten.</p>';
-  const ans=T.filter(r=>V.soorten[r.s.sci]).length, seen=T.filter(r=>V.soorten[r.s.sci]?.s==='gezien').length;
-  $('vProg').textContent=`${ans}/${T.length} · ${seen} gezien`; $('vRest').hidden=ans===T.length||!T.length;
-}
-$('vDatum').addEventListener('change',e=>{V.datum=e.target.value;keepV();renderVisit()});
-$('vExtra').addEventListener('input',e=>{V.extra=e.target.value;keepV()});
-$('vNotitie').addEventListener('input',e=>{V.notitie=e.target.value;keepV()});
-$('vRest').addEventListener('click',()=>{for(const r of targets()) if(!V.soorten[r.s.sci]) V.soorten[r.s.sci]={s:'niet'};keepV();renderVisit()});
-$('vSave').addEventListener('click',async()=>{
-  const msg=$('vMsg'); const T=targets();
-  if(!V.datum){msg.textContent='Vul eerst de datum in.';return}
-  const soorten=T.filter(r=>V.soorten[r.s.sci]).map(r=>{const a=V.soorten[r.s.sci];return {soort:r.s.sci,nl:r.s.nl,leefwijze:GINFO[GUILD[r.s.g]].naam.toLowerCase(),gezien:a.s==='gezien',stadium:a.stadium||[],aantal:a.aantal||null,zone:a.zone||null,kans:Math.round(r.final*100)/100}});
-  let duur=null; if(V.start&&V.eind){const [h1,m1]=V.start.split(':').map(Number),[h2,m2]=V.eind.split(':').map(Number);duur=(h2*60+m2)-(h1*60+m1);if(duur<0)duur=null}
-  const doc={datum:V.datum,start:V.start||null,eind:V.eind||null,duur_min:duur,afstand_km:null,spoor:null,bodem:V.bodem||null,weer:V.weer||null,soorten,n_lijst:T.length,n_gezien:soorten.filter(x=>x.gezien).length,extra:V.extra,notitie:V.notitie,bron:'Boswijzer',opgeslagen:new Date().toISOString()};
-  doc.id=V.datum+'-'+Date.now().toString(36);
-  VISITS.push(doc); saveVisits(); V=blankV(); keepV(); renderVisit(); renderHist();
-  msg.textContent=`Opgeslagen op dit toestel: ${doc.n_gezien} van ${doc.n_lijst} verwachte soorten gezien. Exporteer af en toe voor Claude.`;
-});
-const VKEY='boswijzer-bezoeken-v1';
-let VISITS=[];
-function saveVisits(){try{localStorage.setItem(VKEY,JSON.stringify(VISITS))}catch(e){$('vMsg').textContent='Opslaan op dit toestel lukte niet: het geheugen van de browser is vol of geblokkeerd. Exporteer nu je bezoeken.'}}
-function renderHist(){
-  const h=$('vHist'); const list=VISITS.slice().sort((a,b)=>b.datum.localeCompare(a.datum));
-  TRACKS=list.map(x=>x.spoor).filter(Boolean); if(FINDS) renderMap();
-  if(!list.length){h.innerHTML='<p class="note">Opgeslagen bezoeken verschijnen hier.</p>';return}
-  h.replaceChildren(...list.slice(0,10).map(x=>{const r=document.createElement('div');r.className='hist-row';
-    r.innerHTML=`<span>${esc(fmtD(parse(x.datum)))}${x.duur_min?' · '+x.duur_min+' min':''}${x.afstand_km?' · '+nf(x.afstand_km,1)+' km':''}${x.spoor?' · spoor':''}</span><span class="mono">${x.n_gezien??'–'}/${x.n_lijst??'–'} gezien</span>`;return r}));
-  $('vCount').textContent=`${VISITS.length} bezoeken op dit toestel.`;
-}
-async function exportVisits(){
-  const name=`boswijzer-bezoeken-${todayL()}.json`;
-  const blob=new Blob([JSON.stringify({app:'Burnot Boswijzer',versie:1,geexporteerd:new Date().toISOString(),bezoeken:VISITS},null,1)],{type:'application/json'});
+$('exportBtn').addEventListener('click',async()=>{
+  const name=`boswijzer-bezoeken-${iso(localToday())}.json`;
+  const blob=new Blob([JSON.stringify({app:'Burnot Boswijzer',versie:2,geexporteerd:new Date().toISOString(),bezoeken:VISITS},null,1)],{type:'application/json'});
   const file=new File([blob],name,{type:'application/json'});
-  try{ if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:name});return} }catch(e){ if(e&&e.name==='AbortError') return; }
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; document.body.append(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);
-}
-$('vExport').addEventListener('click',exportVisits);
-$('vImport').addEventListener('change',e=>{
+  try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:name});return}}catch(e){if(e&&e.name==='AbortError')return}
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.append(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);
+});
+$('importFile').addEventListener('change',e=>{
   const f=e.target.files[0]; if(!f) return; const rd=new FileReader();
-  rd.onload=()=>{try{const j=JSON.parse(rd.result); const inc=Array.isArray(j)?j:j.bezoeken; if(!Array.isArray(inc)) throw 0;
-      const byId=new Map(VISITS.map(v=>[v.id,v])); let n=0; for(const v of inc){ if(!v||!v.datum) continue; if(!v.id) v.id=v.datum+'-imp'+(n); byId.set(v.id,v); n++; }
-      VISITS=[...byId.values()]; saveVisits(); renderHist(); $('vMsg').textContent=`${n} bezoeken ingelezen.`}
-    catch(err){$('vMsg').textContent='Dit bestand is geen Boswijzer-export.'} e.target.value=''};
+  rd.onload=()=>{try{const j=JSON.parse(rd.result);const inc=Array.isArray(j)?j:j.bezoeken;if(!Array.isArray(inc))throw 0;
+      const by=new Map(VISITS.map(v=>[v.id,v]));let n=0;for(const v of inc){if(!v||!v.datum)continue;if(!v.id)v.id=v.datum+'-imp'+n;by.set(v.id,v);n++}
+      VISITS=[...by.values()];store.set(VKEY,VISITS);renderMeer();$('ioMsg').textContent=`${n} bezoeken ingelezen.`}
+    catch(err){$('ioMsg').textContent='Dit bestand is geen Boswijzer-export.'} e.target.value=''};
   rd.readAsText(f);
 });
-// ---------- routing en opstart
-function route(){
-  const v=location.hash==='#kaart'?'kaart':location.hash==='#bezoek'?'bezoek':'vandaag';
-  for(const n of ['vandaag','kaart','bezoek']){$('v-'+n).hidden=v!==n; const t=$('tab-'+n); if(v===n) t.setAttribute('aria-current','page'); else t.removeAttribute('aria-current');}
-}
-function renderAll(){renderToday();renderMap()}
-document.querySelectorAll('[data-q]').forEach(b=>b.addEventListener('click',()=>{$('date').value=iso(qDate(b.dataset.q));renderAll()}));
-$('date').addEventListener('change',renderAll);
-window.addEventListener('hashchange',route);
 
+// ---------- opstart
 (async function boot(){
   try{
-    const r=await fetch('data.json'); const D=await r.json();
+    const D=await (await fetch('data.json')).json();
     SP=D.species; FINDS=D.finds; ROUTE=D.route;
     W={start:parse(D.weather.start),fcFrom:parse(D.weather.fcFrom),...Object.fromEntries(KEYS.map(k=>[k,D.weather[k].slice()]))};
-    try{const c=JSON.parse(localStorage.getItem(WXKEY)||'null'); if(c&&c.start===D.weather.start&&c.rain.length>=W.rain.length){KEYS.forEach(k=>W[k]=c[k]);W.fcFrom=parse(c.fcFrom)}}catch(e){}
-    let stored=null; try{stored=JSON.parse(localStorage.getItem(VKEY)||'null')}catch(e){}
-    VISITS=Array.isArray(stored)?stored:(D.bezoeken||[]); if(!Array.isArray(stored)) saveVisits();
+    const c=store.get(WXKEY,null); if(c&&c.start===D.weather.start&&c.rain.length>=W.rain.length){KEYS.forEach(k=>W[k]=c[k]);W.fcFrom=parse(c.fcFrom)}
+    const st=store.get(VKEY,null); VISITS=Array.isArray(st)?st:(D.bezoeken||[]); if(!Array.isArray(st)) store.set(VKEY,VISITS);
+    // bezoeken die Claude in data.json aanvulde (bv. met GPX) overschrijven de lokale kopie
+    if(Array.isArray(D.bezoeken)){const by=new Map(VISITS.map(v=>[v.id,v]));let ch=false;for(const v of D.bezoeken){const o=by.get(v.id);if(v.id&&(!o||(v.bijgewerkt&&v.bijgewerkt!==o.bijgewerkt))){by.set(v.id,v);ch=true}}if(ch){VISITS=[...by.values()];store.set(VKEY,VISITS)}}
   }catch(e){$('state').textContent='Laden mislukt. Open de app één keer met bereik.';return}
-  let start=localToday(); if(idx(start)>W.rain.length-1) start=lastDate();
-  $('date').value=iso(start);
-  $('state').hidden=true; $('foot').hidden=false;
-  wxInfo(); route(); renderAll(); renderVisit(); renderHist();
-  fetchWx(false);
+  render(); show(); fetchWx(false);
   try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
-  if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{})}
+  if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
 })();
 })();
 </script>
-
 </body>
 </html>
