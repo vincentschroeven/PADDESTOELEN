@@ -48,6 +48,35 @@ header.top{padding-top:calc(env(safe-area-inset-top,0px) + 14px);padding-bottom:
 h1{margin:0;font:600 26px/1.1 var(--cond);text-wrap:balance}
 .count{font:500 26px/1.1 var(--cond);white-space:nowrap}
 .say{margin:0;font-size:13.5px;color:var(--muted)}
+.gauge-row{display:flex;align-items:center;gap:14px}
+.gnum{display:flex;flex-direction:column}
+.gnum .big{font:700 50px/.9 var(--cond)}
+.sec{display:flex;flex-direction:column;padding-top:16px}
+.shead{display:flex;justify-content:space-between;align-items:baseline;gap:8px;border-bottom:1px solid var(--fg);padding-bottom:6px}
+.shead b{font:600 17px var(--cond)}
+.shead span{font:500 11.5px var(--mono);color:var(--muted)}
+.cond{display:grid;grid-template-columns:16px minmax(0,1fr) auto;gap:3px 10px;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--line)}
+.cond .mk{width:16px;height:16px;display:flex;align-items:center;justify-content:center;font:600 11px var(--mono);border:1.5px solid var(--fg);align-self:center}
+.cond .mk.ok{background:var(--fg);color:var(--bg)}
+.cond b{font-weight:600;font-size:14px}
+.cond .v{font:500 13px var(--mono);font-variant-numeric:tabular-nums;text-align:right}
+.cond .r{grid-column:2 / span 2;font-size:12.5px;color:var(--muted)}
+.week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;padding-top:10px}
+.day{display:flex;flex-direction:column;align-items:center;gap:3px;font:500 12px var(--mono);font-variant-numeric:tabular-nums}
+.day .barw{height:56px;width:100%;display:flex;align-items:flex-end;justify-content:center}
+.day .bar{display:block;width:60%;background:var(--wet)}
+.day .t{font-weight:400;font-size:11px;color:var(--muted)}
+.day .dn{width:100%;text-align:center;border-top:1px solid var(--fg);padding-top:3px;text-transform:uppercase;font-size:11px}
+.day.fc .bar{opacity:.45}
+.grp{display:flex;flex-direction:column;gap:5px;border-top:1px solid var(--fg);padding-top:8px;margin-top:16px}
+.grp .gh{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.grp .gt{display:flex;align-items:center;gap:8px;font:600 17px var(--cond)}
+.grp .gt i{width:10px;height:10px;display:inline-block}
+.grp .gs{font:500 11.5px var(--mono);color:var(--muted)}
+.grp .names{margin:0;font-size:14px}
+.grp .why{margin:0;font-size:13px;color:var(--muted)}
+.grp .why b{color:var(--fg);font-weight:600}
+.more{align-self:flex-start;min-height:36px;font:500 11.5px var(--mono);letter-spacing:.06em;text-transform:uppercase;text-decoration:underline;text-underline-offset:3px}
 .soil{display:flex;flex-direction:column;gap:3px}
 .soil svg{display:block;width:100%;height:auto}
 .soil .ax{display:flex;justify-content:space-between;font:400 10.5px var(--mono);color:var(--muted)}
@@ -114,9 +143,7 @@ textarea{width:100%;min-height:64px;padding:8px;border:1px solid var(--line);bac
       <label class="datebtn" for="date"><span class="lbl" id="dateLbl">Vandaag</span><span class="lbl" aria-hidden="true">▾</span><input type="date" id="date" aria-label="Datum"></label>
       <button type="button" class="lbl morebtn" id="moreBtn" aria-label="Meer: weer, bezoeken en export">Meer</button>
     </div>
-    <div class="verdict"><h1 id="verdict">Laden…</h1><span class="count" id="count"></span></div>
-    <p class="say" id="say"></p>
-    <div class="soil"><span class="say">Bodemvocht, 14 dagen. Boven de stippellijn is de bodem nat genoeg voor bodemsoorten.</span><svg id="stripes" viewBox="0 0 350 40" role="img" aria-label="Bodemvocht van de laatste 14 dagen"></svg><div class="ax"><span id="axFrom"></span><span id="axTo"></span></div></div>
+    <div class="gauge-row"><svg id="gauge" viewBox="0 0 300 170" width="132" height="75" role="img" aria-label="Meter"></svg><div class="gnum"><span class="big" id="count"></span><span class="lbl" id="verdict"></span></div></div>
   </header>
   <main class="pad" id="list"><p class="state" id="state">Soorten en weer van de vallei laden.</p></main>
 </div>
@@ -295,43 +322,78 @@ const WXKEY='boswijzer-weer-v1';
 let DATUM=iso(localToday()); const open={};
 
 // ---------- hoofdscherm
+const DAGEN=['zo','ma','di','wo','do','vr','za'];
+const MAAND=['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
+const dAt=j=>new Date(W.start.getTime()+j*DAY);
+function gaugeSvg(n){
+  const arc=(a0,a1,r,col,w)=>{const p=a=>[150+r*Math.cos(a*Math.PI/180),140-r*Math.sin(a*Math.PI/180)];const [x0,y0]=p(a0),[x1,y1]=p(a1);return `<path d="M${x0.toFixed(1)} ${y0.toFixed(1)} A${r} ${r} 0 0 1 ${x1.toFixed(1)} ${y1.toFixed(1)}" fill="none" stroke="${col}" stroke-width="${w}"/>`};
+  const lvl=n>=15?2:n>=6?1:0; const seg=['var(--line)','var(--line)','var(--line)']; seg[lvl]='var(--fg)';
+  const a=180-Math.min(1,n/30)*180; const nx=150+96*Math.cos(a*Math.PI/180), ny=140-96*Math.sin(a*Math.PI/180);
+  return arc(180,122,118,seg[0],20)+arc(118,62,118,seg[1],20)+arc(58,0,118,seg[2],20)+`<line x1="150" y1="140" x2="${nx.toFixed(1)}" y2="${ny.toFixed(1)}" stroke="var(--fg)" stroke-width="4"/><circle cx="150" cy="140" r="8" fill="var(--fg)"/>`;
+}
+function names(list,max){const n=list.slice(0,max).map(r=>esc(r.s.nl));return n.join(' · ')+(list.length>max?` · <span style="color:var(--muted)">en ${list.length-max} meer</span>`:'')}
 function render(){
   const d=parse(DATUM); const i=idx(d);
   const today=DATUM===iso(localToday());
   $('date').value=DATUM;
-  $('dateLbl').textContent=today?'Vandaag · '+d.toLocaleDateString('nl-BE',{day:'numeric',month:'short',timeZone:'UTC'}):d.toLocaleDateString('nl-BE',{weekday:'short',day:'numeric',month:'short',timeZone:'UTC'});
+  $('dateLbl').textContent=(today?'Vandaag · ':'')+d.toLocaleDateString('nl-BE',{weekday:today?undefined:'short',day:'numeric',month:'short',timeZone:'UTC'});
   let f=null, wi=i, stale=false;
   if(i>W.rain.length-1&&i-(W.rain.length-1)<=7){wi=W.rain.length-1;stale=true}
   if(wi>=30&&wi<=W.rain.length-1){f=features(wi); RES=SP.filter(s=>s.g!=='overjarig').map(s=>score(s,d,f));}
   else RES=SP.filter(s=>s.g!=='overjarig').map(s=>({s,final:seasonAt(s,d),base:seasonAt(s,d),why:[],own:false}));
   const high=RES.filter(r=>r.final>=0.5).sort((a,b)=>b.final-a.final);
   const mid=RES.filter(r=>r.final>=0.22&&r.final<0.5).sort((a,b)=>b.final-a.final);
-  $('verdict').textContent='Verwachting: '+(high.length>=15?'hoog':high.length>=6?'matig':'laag');
-  $('count').textContent=high.length+' soorten';
-  // de zin
-  if(f){
-    const p=[];
-    p.push(f.wetRun>0?`Bodem ${f.wetRun} dag${f.wetRun>1?'en':''} nat.`:`Bodem droog (${nf(f.sm,2)}).`);
-    const r2=(W.rain[wi]||0)+(W.rain[wi-1]||0);
-    if(r2>=5) p.push(`${nf(r2,0)} mm regen in 2 dagen.`);
-    if(f.frost7>0) p.push(`${f.frost7} vorstnacht${f.frost7>1?'en':''} deze week.`);
-    p.push(f.wetRun>=7?'Mycorrhiza zou nu volop moeten komen.':f.wetRun>0?'Opruimers komen eerst; mycorrhiza volgt 5 tot 10 dagen na de natte start.':'Weinig nieuwe bodemsoorten; kijk vooral op hout.');
-    if(stale) p.push(`(Weer tot ${fmtS(lastDate())}; vernieuwt met bereik.)`);
-    $('say').textContent=p.join(' ');
-  } else $('say').textContent=`Geen weer voor deze dag; de lijst volgt alleen het seizoen.`;
-  // strepen
-  const st=$('stripes'); const end=Math.min(wi,W.rain.length-1); const bw=350/14; const lo=0.22, hi=0.44; const y=v=>40-Math.max(0,Math.min(1,(v-lo)/(hi-lo)))*38;
-  let svg=''; for(let k=13;k>=0;k--){const j=end-k, n=13-k, v=W.sm[j]; if(v==null) continue; const yy=y(v), wet=v>=0.34;
-    svg+=`<rect x="${(n*bw+1).toFixed(1)}" y="${yy.toFixed(1)}" width="${(bw-2).toFixed(1)}" height="${(40-yy).toFixed(1)}" fill="var(${wet?'--wet':'--dry'})"/>`;}
-  const ty=y(0.34).toFixed(1); svg+=`<line x1="0" x2="350" y1="${ty}" y2="${ty}" stroke="var(--fg)" stroke-width="1" stroke-dasharray="3 3"/>`;
-  st.innerHTML=svg; $('axFrom').textContent=fmtS(new Date(W.start.getTime()+(end-13)*DAY)); $('axTo').textContent=fmtS(new Date(W.start.getTime()+end*DAY));
-  // lijst
+  const lvl=high.length>=15?'hoog':high.length>=6?'matig':'laag';
+  $('count').textContent=high.length; $('verdict').textContent=`soorten · verwachting ${lvl}`;
+  $('gauge').innerHTML=gaugeSvg(high.length); $('gauge').setAttribute('aria-label',`Meter staat op ${lvl}`);
   const L=$('list'); L.replaceChildren();
-  for(const k of ['m','s','p']){
-    const items=high.filter(r=>GUILD[r.s.g]===k); if(!items.length) continue;
-    const g=document.createElement('section'); g.className='group';
-    g.innerHTML=`<div class="ghead"><span class="gname"><i style="background:${GC[k]}"></i>${GN[k]}</span><span class="gcount">${items.length}</span></div>`;
-    for(const r of items) g.append(row(r));
+  // ---- omstandigheden
+  if(f){
+    const m=d.getUTCMonth();
+    const peak=SP.filter(s=>s.g!=='overjarig'&&s.season[m]>=0.8).length;
+    let best=0,bestAgo=null; for(let k=0;k<7;k++){const j=wi-k; if(j<2) break; const s3=(W.rain[j]||0)+(W.rain[j-1]||0)+(W.rain[j-2]||0); if(s3>best){best=s3;bestAgo=k}}
+    const wetStart=f.wetRun>0?dAt(wi-f.wetRun+1):null;
+    const C=[
+      ['Seizoen',MAAND[m],`${peak} soorten zitten in België nu in hun piekmaand.`,peak>=10],
+      ['Bodemvocht',nf(f.sm,2),f.sm>=0.34?'Boven de drempel van 0,34: bodemsoorten kunnen komen.':'Onder de drempel van 0,34: weinig nieuwe bodemsoorten, kijk op hout.',f.sm>=0.34],
+      ['Natte dagen op rij',String(f.wetRun),f.wetRun>=7?'Lang genoeg nat: mycorrhiza kan nu volop komen.':f.wetRun>0?`Mycorrhiza komt meestal 1 tot 2 weken nadat de bodem nat werd (${fmtS(wetStart)}).`:'Mycorrhiza wacht op een natte periode van minstens een week.',f.wetRun>=7],
+      ['Flinke bui',`${nf(best,0)} mm / 3 d`,best>=15?`Vanaf 15 mm in 3 dagen schieten snelle opruimers op. ${bestAgo===0?'Dat was tot vandaag.':`Dat was ${bestAgo} dag${bestAgo>1?'en':''} geleden.`}`:'Geen bui van 15 mm in 3 dagen deze week: snelle opruimers blijven rustig.',best>=15],
+      ['Temperatuur',`${nf(f.t7,0)} °C${f.frost7?` · ${f.frost7}× vorst`:' · geen vorst'}`,f.frost7?'Vorst remt de meeste soorten; fluweelpootje en haarijs doen het dan juist goed.':(f.t7<5?'Koud: de groei vertraagt.':f.t7>20?'Warm: vooral zomersoorten.':'Gemiddelde van 7 dagen, binnen het bereik van je eerdere vondsten.'),!f.frost7&&f.t7>=5&&f.t7<=20]
+    ];
+    const ok=C.filter(c=>c[3]).length;
+    const sec=document.createElement('section'); sec.className='sec';
+    sec.innerHTML=`<div class="shead"><b>Omstandigheden</b><span>${ok} van 5 gunstig${stale?` · weer tot ${fmtS(lastDate())}`:''}</span></div>`+
+      C.map(([l,v,r,o])=>`<div class="cond"><span class="mk${o?' ok':''}" aria-label="${o?'gunstig':'nog niet'}">${o?'✓':'…'}</span><b>${l}</b><span class="v">${esc(v)}</span><span class="r">${esc(r)}</span></div>`).join('');
+    L.append(sec);
+    // regen week
+    const wk=document.createElement('section'); wk.className='sec';
+    let cells=''; const mx=Math.max(15,...[0,1,2,3,4,5,6].map(k=>W.rain[wi-k]||0));
+    for(let k=6;k>=0;k--){const j=wi-k, r=W.rain[j]||0, t=W.t[j], dd=dAt(j), fc=dd>=W.fcFrom&&dd>localToday();
+      cells+=`<div class="day${fc?' fc':''}"><div class="barw"><span class="bar" style="height:${Math.max(2,r/mx*56).toFixed(0)}px"></span></div><span>${nf(r,0)}</span><span class="t">${t==null?'–':nf(t,0)+'°'}</span><span class="dn">${DAGEN[dd.getUTCDay()]}</span></div>`}
+    wk.innerHTML=`<div class="shead"><b>Regen, afgelopen week</b><span>mm · °C</span></div><div class="week">${cells}</div>`;
+    L.append(wk);
+  } else {
+    const p=document.createElement('p'); p.className='note'; p.style.paddingTop='16px'; p.textContent='Geen weer voor deze dag: de lijst volgt alleen het seizoen.'; L.append(p);
+  }
+  // ---- groepen met waarom
+  const isNew=r=>!r.s.own.length;
+  const sap=high.filter(r=>GUILD[r.s.g]==='s'&&!isNew(r)), myc=high.filter(r=>GUILD[r.s.g]==='m'&&!isNew(r)), par=high.filter(r=>GUILD[r.s.g]==='p'&&!isNew(r)), nw=high.filter(isNew);
+  const G=[];
+  if(sap.length) G.push(['s',f&&f.soakAgo!=null&&f.soakAgo<=4?'Nu op hun best':'Opruimers',`saprotroof · ${sap.length}`,sap,
+    !f?'ze volgen het seizoen.':f.soakAgo!=null&&f.soakAgo<=4?'opruimers leven van dood hout en blad en reageren binnen enkele dagen op een flinke bui.':f.sm>=0.34?'de bodem is vochtig, dus blad en hout breken nu goed af.':'dood hout houdt langer vocht vast dan de bodem; kijk op stronken en takken.']);
+  if(myc.length){const ws=f&&f.wetRun>0?dAt(wi-f.wetRun+1):null;
+    G.push(['m',f&&f.wetRun>=7?'Nu volop':f&&f.wetRun>0?'Komt eraan':'Wacht op regen',`mycorrhiza · ${myc.length}`,myc,
+    !f?'ze volgen het seizoen.':f.wetRun>=7?'ze leven samen met bomen en de bodem is al lang genoeg nat.':f.wetRun>0?`ze leven samen met bomen en hebben langer nat nodig. Je verwacht ze vooral tussen ${fmtS(new Date(ws.getTime()+7*DAY))} en ${fmtS(new Date(ws.getTime()+14*DAY))}.`:'ze leven samen met bomen en komen pas na een week of meer natte bodem.'])}
+  if(par.length) G.push(['p','Parasieten',`parasiet · ${par.length}`,par,'ze leven op bomen of op andere paddenstoelen en volgen vooral het seizoen.']);
+  if(nw.length){const gast=nw.some(r=>/Asterophora/.test(r.s.sci));
+    G.push(['new','Nieuw voor jou',`nooit gemeld · ${nw.length}`,nw,`in België nu in seizoen en ze passen bij je bos.${gast?' De zwamgasten groeien op oude, zwarte grofplaatrussula’s: vind je die, kijk dan 2 tot 4 weken later opnieuw.':''}`]);}
+  for(const [k,title,sub,list,why] of G){
+    const g=document.createElement('section'); g.className='grp';
+    const col=k==='new'?'transparent;border:1.5px solid var(--myc)':GC[k];
+    const isOpen=!!open['grp-'+k];
+    g.innerHTML=`<div class="gh"><span class="gt"><i style="background:${col}"></i>${title}</span><span class="gs">${sub}</span></div><p class="names">${names(list,6)}</p><p class="why"><b>Waarom:</b> ${esc(why)}</p><button type="button" class="more" aria-expanded="${isOpen}">${isOpen?'Verberg details':'Details per soort'}</button>`;
+    g.querySelector('.more').addEventListener('click',()=>{open['grp-'+k]=!open['grp-'+k];render()});
+    if(isOpen){const box=document.createElement('div'); for(const r of list) box.append(row(r)); g.append(box)}
     L.append(g);
   }
   if(mid.length){
