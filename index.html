@@ -122,7 +122,9 @@ textarea{width:100%;min-height:64px;padding:8px;border:1px solid var(--line);bac
 .seg button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
 .omgbtn{margin-top:8px;min-height:40px;width:100%;border:1px solid var(--fg);font:500 11.5px var(--mono);letter-spacing:.06em;text-transform:uppercase}
 .omgbtn[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
+.lay{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .map{display:block;width:100%;height:auto;background:var(--soft);margin-top:12px;touch-action:manipulation}
+.mapwrap{position:relative}.zbtns{position:absolute;right:8px;bottom:8px;display:flex;flex-direction:column;border:1px solid var(--fg);background:var(--bg)}.zbtns button{width:40px;height:40px;font:500 18px var(--mono);color:var(--fg);background:var(--bg);border:0}.zbtns button+button{border-top:1px solid var(--fg)}
 .pick{min-height:44px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
 .legend-row{display:flex;align-items:center;gap:10px;min-height:34px;border-bottom:1px solid var(--line);font-size:14px}
 .legend-row .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
@@ -163,11 +165,11 @@ textarea{width:100%;min-height:64px;padding:8px;border:1px solid var(--line);bac
       <button type="button" id="mToday" aria-pressed="true">Plekken voor vandaag</button>
       <button type="button" id="mAll" aria-pressed="false">Alle vondsten</button>
     </div>
-    <button type="button" class="omgbtn" id="mOmg" aria-pressed="true">Omgeving</button>
-    <svg class="map" id="map" role="img" aria-label="Kaart van de Burnotvallei met je vindplaatsen"></svg>
+    <div class="lay"><button type="button" class="omgbtn" id="mOmg" aria-pressed="true">Omgeving</button><button type="button" class="omgbtn" id="mHab" aria-pressed="true">Habitats</button></div>
+    <div class="mapwrap"><svg class="map" id="map" role="img" aria-label="Kaart van de Burnotvallei met je vindplaatsen"></svg><div class="zbtns"><button type="button" id="zIn" aria-label="Inzoomen">+</button><button type="button" id="zOut" aria-label="Uitzoomen">−</button><button type="button" id="zAll" aria-label="Hele kaart">⤢</button></div></div>
     <div class="pick" id="pick">Tik een stip voor soort en datum.</div>
     <div id="legend"></div>
-    <p class="note" style="padding:12px 0 40px">Zwarte lijn: Route 1. Grijze lijnen: je wandelingen uit GPX. Symbolen: plekbeschrijvingen uit je foto's en notities; tik een vondst om de omgeving binnen 50 m te zien.</p>
+    <p class="note" style="padding:12px 0 40px">Zwarte lijn: Route 1. Grijze lijnen: je wandelingen uit GPX. Symbolen: plekbeschrijvingen uit je foto's en notities; tik een vondst om de omgeving binnen 50 m te zien. Gekleurde vlakken: Natura 2000-habitats (Wallonië). Zoom met twee vingers, het scrollwiel of de knoppen.</p>
   </div>
 </div>
 
@@ -451,9 +453,9 @@ const OSYM={
 };
 const ONAAM={beuk:'Beuk',eik:'Eik',berk:'Berk',naald:'Naaldhout',hakhout:'Hakhout',gemengd:'Gemengd bos',stam:'Liggende stam',stronk:'Stronk',rots:'Rots',gras:'Grasland',water:'Water',uitzicht:'Uitzicht',dorp:'Dorp / gebouw'};
 let OMG=[], omgOn=true;
-function omgLayer(P){
+function omgLayer(P,Z=1){
   if(!omgOn) return '';
-  return OMG.map((o,i)=>{const [x,y]=P(o.lat,o.lon);return `<g data-o="${i}" transform="translate(${(x-8.4).toFixed(1)},${(y-8.4).toFixed(1)}) scale(.6)" style="cursor:pointer"><rect width="28" height="28" fill="transparent"/>${OSYM[o.type]||OSYM.gemengd}</g>`}).join('');
+  return OMG.map((o,i)=>{const [x,y]=P(o.lat,o.lon);return `<g data-o="${i}" transform="translate(${(x-8.4*Z).toFixed(2)},${(y-8.4*Z).toFixed(2)}) scale(${(.6*Z).toFixed(3)})" style="cursor:pointer"><rect width="28" height="28" fill="transparent"/>${OSYM[o.type]||OSYM.gemengd}</g>`}).join('');
 }
 function omgNear(la,lo){let best=null,bd=50;const k=Math.cos(la*Math.PI/180);for(const o of OMG){const d=Math.hypot((o.lat-la)*111320,(o.lon-lo)*111320*k);if(d<bd){bd=d;best=o}}return best?{o:best,d:Math.round(bd)}:null}
 function omgText(o){return `${ONAAM[o.type]||'Plek'} · ${fmtD(parse(o.datum))} — ${o.zin}${o.kenmerken&&o.kenmerken.length?' ['+o.kenmerken.join(', ')+']':''}`}
@@ -465,10 +467,78 @@ function omgLegend(lg){
 }
 function omgClick(e){
   const g=e.target.closest('[data-o]'); if(g){$('pick').textContent=omgText(OMG[+g.dataset.o]);return true}
-  const c=e.target.closest('circle[data-k]'); if(!c) return true;
+  const c=e.target.closest('circle[data-k]'); if(!c){const h=e.target.closest('[data-h]'); if(h) $('pick').textContent=habText(HAB[+h.dataset.h]); return true}
   const [n,dt,la,lo]=c.dataset.k.split('|'); const nb=omgNear(+la,+lo);
   $('pick').textContent=`${n} · ${fmtD(parse(dt))}`+(nb?` — omgeving (${nb.d} m): ${nb.o.zin}`:'');
   return true;
+}
+
+// ---------- Habitatlaag (Natura 2000-inventaris Wallonië) en zoomen.
+const HTYPE={
+  '9130':{n:'Beukenbos op rijkere bodem',c:'#B9D7A0',u:'Beuk met eik en haagbeuk op neutrale, voedselrijke bodem. Porseleinzwam, nevelzwam, honingzwam en veel strooiselzwammen.'},
+  '9180':{n:'Ravijnbos',c:'#9FCFC0',u:'Esdoorn, es en linde op steile, stenige hellingen. Vochtig en schaduwrijk, veel dood hout.'},
+  '9110':{n:'Zuur beukenbos',c:'#D9D08E',u:'Arme, zure bodem. Terrein van eekhoorntjesbrood, cantharellen en russula\'s.'},
+  '9150':{n:'Kalkbeukenbos',c:'#C7D98A',u:'Beuk op droge kalkhellingen. Zeldzaam; specifieke gordijnzwammen en ridderzwammen.'},
+  '6210':{n:'Kalkgrasland',c:'#F2DC8C',u:'Droog grasland op kalk. In de late herfst het terrein van wasplaten en aardtongen.'},
+  '8210':{n:'Kalkrotsen',c:'#D8C2BC',u:'Rotswanden op kalk met spleetvegetatie.'},
+  '3260':{n:'Beek',c:'#9DC3E6',u:'Beek met waterplanten.'},
+  '91E0':{n:'Elzen-essenbos langs de beek',c:'#9DC3E6',u:'Vochtig oeverbos met els en es.'}
+};
+let HAB=[], habOn=true;
+function habCodes(h){return String(h.e).split(/\s+/).filter(c=>HTYPE[c])}
+function habName(h){return habCodes(h).map(c=>HTYPE[c].n).join(' + ')||'Habitat'}
+function habLayer(P,Z){
+  if(!habOn) return '';
+  return HAB.map((h,i)=>{const c=HTYPE[habCodes(h)[0]]||{c:'#ccc'};
+    const d=h.r.map(r=>'M'+r.map(p=>P(p[0],p[1]).join(',')).join('L')+'Z').join('');
+    return `<path data-h="${i}" d="${d}" fill="${c.c}" fill-opacity=".75" fill-rule="evenodd" stroke="${c.c}" stroke-width="${(0.8*Z).toFixed(2)}"/>`}).join('');
+}
+function habText(h){const cs=habCodes(h);return `${habName(h)}${h.ha?` · ${String(h.ha).replace('.',',')} ha`:''} — ${cs.map(c=>HTYPE[c].u).join(' ')} (Natura 2000-habitat ${cs.join(', ')})`}
+function habLegend(lg){
+  if(!habOn||!HAB.length) return;
+  const tot={}; for(const h of HAB){const c=habCodes(h)[0]; if(!c) continue; tot[c]=(tot[c]||0)+(h.ha||0)}
+  for(const c of Object.keys(tot).sort((a,b)=>tot[b]-tot[a])){const r=document.createElement('div');r.className='legend-row';
+    r.innerHTML=`<span style="width:14px;height:10px;flex-shrink:0;background:${HTYPE[c].c};opacity:.8"></span><span>${HTYPE[c].n}</span><span class="c">${tot[c].toFixed(1).replace('.',',')} ha</span>`;lg.appendChild(r)}
+}
+// Zoom: MV = beeldvenster in kaartcoördinaten; stippen en symbolen blijven even groot op het scherm.
+const MV={k:1,x:0,y:0}; let MAPWH=[350,300], MAPMOVED=false, zoomTimer=null;
+function mapView(){const [W,H]=MAPWH, vw=W/MV.k, vh=H/MV.k;
+  MV.x=Math.min(Math.max(MV.x,-vw*0.3),W-vw*0.7); MV.y=Math.min(Math.max(MV.y,-vh*0.3),H-vh*0.7);
+  $('map').setAttribute('viewBox',`${MV.x.toFixed(2)} ${MV.y.toFixed(2)} ${vw.toFixed(2)} ${vh.toFixed(2)}`);
+  clearTimeout(zoomTimer); zoomTimer=setTimeout(()=>renderMap(),140);
+}
+function zoomAt(k,fx,fy){const [W,H]=MAPWH; const bx=MV.x+fx*W/MV.k, by=MV.y+fy*H/MV.k;
+  MV.k=Math.min(Math.max(k,1),10); MV.x=bx-fx*W/MV.k; MV.y=by-fy*H/MV.k; mapView()}
+function mapDecor(W,H,mpp,Z){
+  const vx=MV.x, vy=MV.y, vw=W/MV.k, vh=H/MV.k;
+  const d=[10,25,50,100,200,500].find(m=>m/mpp*MV.k>=40)||500, bar=d/mpp;
+  const f=v=>v.toFixed(2);
+  return `<line x1="${f(vx+12*Z)}" y1="${f(vy+vh-12*Z)}" x2="${f(vx+12*Z+bar)}" y2="${f(vy+vh-12*Z)}" stroke="var(--fg)" stroke-width="${f(2*Z)}"/><text x="${f(vx+16*Z+bar)}" y="${f(vy+vh-9*Z)}" font-family="IBM Plex Mono, monospace" font-size="${f(9*Z)}" fill="var(--fg)">${d} m</text>`+
+    `<text x="${f(vx+vw-14*Z)}" y="${f(vy+16*Z)}" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="${f(10*Z)}" fill="var(--fg)">N</text><line x1="${f(vx+vw-14*Z)}" y1="${f(vy+20*Z)}" x2="${f(vx+vw-14*Z)}" y2="${f(vy+32*Z)}" stroke="var(--fg)" stroke-width="${f(1.5*Z)}"/>`;
+}
+function mapGestures(){
+  const svg=$('map'), ptr=new Map(); let start=null;
+  const frac=(x,y)=>{const r=svg.getBoundingClientRect();return [(x-r.left)/r.width,(y-r.top)/r.height]};
+  function begin(){const ps=[...ptr.values()];
+    if(ps.length===1){start={mode:'pan',x0:ps[0].x,y0:ps[0].y,mx:MV.x,my:MV.y}}
+    else if(ps.length>=2){const [a,b]=ps;const mx=(a.x+b.x)/2,my=(a.y+b.y)/2,[fx,fy]=frac(mx,my);
+      start={mode:'pinch',d0:Math.hypot(a.x-b.x,a.y-b.y)||1,k0:MV.k,bx:MV.x+fx*MAPWH[0]/MV.k,by:MV.y+fy*MAPWH[1]/MV.k}}}
+  svg.addEventListener('pointerdown',e=>{ptr.set(e.pointerId,{x:e.clientX,y:e.clientY});MAPMOVED=false;begin()});
+  svg.addEventListener('pointermove',e=>{if(!ptr.has(e.pointerId)||!start) return; ptr.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    const r=svg.getBoundingClientRect(), ps=[...ptr.values()];
+    if(start.mode==='pan'&&ps.length===1){const dx=ps[0].x-start.x0, dy=ps[0].y-start.y0; if(Math.hypot(dx,dy)<5&&!MAPMOVED) return;
+      if(MV.k<=1.001) return; MAPMOVED=true; svg.setPointerCapture&&svg.setPointerCapture(e.pointerId);
+      MV.x=start.mx-dx/r.width*MAPWH[0]/MV.k; MV.y=start.my-dy/r.height*MAPWH[1]/MV.k; mapView()}
+    else if(start.mode==='pinch'&&ps.length>=2){const [a,b]=ps; MAPMOVED=true;
+      const k=Math.min(Math.max(start.k0*Math.hypot(a.x-b.x,a.y-b.y)/start.d0,1),10), [fx,fy]=frac((a.x+b.x)/2,(a.y+b.y)/2);
+      MV.k=k; MV.x=start.bx-fx*MAPWH[0]/k; MV.y=start.by-fy*MAPWH[1]/k; mapView()}});
+  const end=e=>{ptr.delete(e.pointerId); start=null; if(ptr.size) begin()};
+  svg.addEventListener('pointerup',end); svg.addEventListener('pointercancel',end);
+  svg.addEventListener('click',e=>{if(MAPMOVED){e.stopImmediatePropagation();MAPMOVED=false}},true);
+  svg.addEventListener('wheel',e=>{e.preventDefault(); const [fx,fy]=frac(e.clientX,e.clientY); zoomAt(MV.k*Math.exp(-e.deltaY*0.0015),fx,fy)},{passive:false});
+  $('zIn').addEventListener('click',()=>zoomAt(MV.k*1.6,.5,.5));
+  $('zOut').addEventListener('click',()=>zoomAt(MV.k/1.6,.5,.5));
+  $('zAll').addEventListener('click',()=>{MV.k=1;MV.x=0;MV.y=0;mapView()});
 }
 
 function renderMap(){
@@ -479,22 +549,23 @@ function renderMap(){
   $('mToday').setAttribute('aria-pressed',String(mapToday)); $('mAll').setAttribute('aria-pressed',String(!mapToday));
   const ord={o:0,s:1,p:2,m:3};
   const pts=L.slice().sort((a,c)=>ord[a[5]]-ord[c[5]]);
-  const svg=$('map'); svg.setAttribute('viewBox',`0 0 ${Wd} ${Hd}`);
-  const tracks=VISITS.map(v=>v.spoor).filter(Boolean).map(t=>`<polyline points="${t.pts.map(p=>P(p[0],p[1]).join(',')).join(' ')}" fill="none" stroke="var(--grey)" stroke-width="1.2" stroke-linejoin="round"/>`).join('');
-  const mpp=((b.e-b.w)*111320*kx)/Wd, bar=100/mpp;
-  svg.innerHTML=tracks+`<polyline points="${ROUTE.map(p=>P(p[0],p[1]).join(',')).join(' ')}" fill="none" stroke="var(--fg)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`+
-    pts.map(f=>{const [x,y]=P(f[0],f[1]);return `<circle cx="${x}" cy="${y}" r="${mapToday?4:(f[5]==='o'?2.2:3)}" fill="${KC[f[5]]}" data-k="${esc(f[3])}|${esc(f[2])}|${f[0]}|${f[1]}"/>`}).join('')+omgLayer(P)+
-    `<line x1="12" y1="${Hd-12}" x2="${(12+bar).toFixed(1)}" y2="${Hd-12}" stroke="var(--fg)" stroke-width="2"/><text x="${(16+bar).toFixed(1)}" y="${Hd-9}" font-family="IBM Plex Mono, monospace" font-size="9" fill="var(--fg)">100 m</text>`+
-    `<text x="${Wd-14}" y="16" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="var(--fg)">N</text><line x1="${Wd-14}" y1="20" x2="${Wd-14}" y2="32" stroke="var(--fg)" stroke-width="1.5"/>`;
+  const svg=$('map'); MAPWH=[Wd,Hd]; const Z=1/MV.k; svg.setAttribute('viewBox',`${MV.x} ${MV.y} ${Wd/MV.k} ${Hd/MV.k}`); svg.style.touchAction=MV.k>1.001?'none':'pan-y';
+  const tracks=VISITS.map(v=>v.spoor).filter(Boolean).map(t=>`<polyline points="${t.pts.map(p=>P(p[0],p[1]).join(',')).join(' ')}" fill="none" stroke="var(--grey)" stroke-width="${(1.2*Z).toFixed(2)}" stroke-linejoin="round"/>`).join('');
+  const mpp=((b.e-b.w)*111320*kx)/Wd, MPP=mpp;
+  svg.innerHTML=habLayer(P,Z)+tracks+`<polyline points="${ROUTE.map(p=>P(p[0],p[1]).join(',')).join(' ')}" fill="none" stroke="var(--fg)" stroke-width="${(2*Z).toFixed(2)}" stroke-linejoin="round" stroke-linecap="round"/>`+
+    pts.map(f=>{const [x,y]=P(f[0],f[1]);return `<circle cx="${x}" cy="${y}" r="${((mapToday?4:(f[5]==='o'?2.2:3))*Z).toFixed(2)}" fill="${KC[f[5]]}" data-k="${esc(f[3])}|${esc(f[2])}|${f[0]}|${f[1]}"/>`}).join('')+omgLayer(P,Z)+
+    mapDecor(Wd,Hd,MPP,Z);
   const spp=new Set(L.map(f=>f[4])).size;
   $('mapTitle').textContent=mapToday?`${L.length} plekken · ${spp} soorten`:`${L.length} vondsten`;
   const lg=$('legend'); lg.replaceChildren();
   for(const k of ['m','s','p','o']){const n=L.filter(f=>f[5]===k).length; if(!n) continue; const r=document.createElement('div'); r.className='legend-row'; r.innerHTML=`<span class="dot" style="background:${KC[k]}"></span><span>${KN[k]}</span><span class="c">${n}</span>`; lg.append(r)}
-  omgLegend(lg);
+  omgLegend(lg); habLegend(lg);
   $('pick').textContent=mapToday?'Plekken waar je soorten vond die nu verwacht worden. Tik een stip of symbool.':'Tik een stip of symbool.';
 }
 $('map').addEventListener('click',omgClick);
 $('mOmg').addEventListener('click',()=>{omgOn=!omgOn;$('mOmg').setAttribute('aria-pressed',String(omgOn));renderMap()});
+$('mHab').addEventListener('click',()=>{habOn=!habOn;$('mHab').setAttribute('aria-pressed',String(habOn));renderMap()});
+mapGestures();
 $('mToday').addEventListener('click',()=>{mapToday=true;renderMap()});
 $('mAll').addEventListener('click',()=>{mapToday=false;renderMap()});
 
@@ -530,7 +601,7 @@ $('wxBtn').addEventListener('click',()=>fetchWx(true));
     SP=D.species; FINDS=D.finds; ROUTE=D.route;
     W={start:parse(D.weather.start),fcFrom:parse(D.weather.fcFrom),...Object.fromEntries(KEYS.map(k=>[k,D.weather[k].slice()]))};
     const c=store.get(WXKEY,null); if(c&&c.start===D.weather.start&&c.rain.length>=W.rain.length){KEYS.forEach(k=>W[k]=c[k]);W.fcFrom=parse(c.fcFrom)}
-    VISITS=D.bezoeken||[]; OMG=D.omgeving||[];
+    VISITS=D.bezoeken||[]; OMG=D.omgeving||[]; HAB=D.habitat||[];
   }catch(e){$('state').textContent='Laden mislukt. Open de app één keer met bereik.';return}
   render(); show(); fetchWx(false);
   try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
