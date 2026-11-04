@@ -120,6 +120,8 @@ textarea{width:100%;min-height:64px;padding:8px;border:1px solid var(--line);bac
 .seg button{min-height:42px;font:500 11.5px var(--mono);letter-spacing:.06em;text-transform:uppercase}
 .seg button+button{border-left:1px solid var(--fg)}
 .seg button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
+.omgbtn{margin-top:8px;min-height:40px;width:100%;border:1px solid var(--fg);font:500 11.5px var(--mono);letter-spacing:.06em;text-transform:uppercase}
+.omgbtn[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
 .map{display:block;width:100%;height:auto;background:var(--soft);margin-top:12px;touch-action:manipulation}
 .pick{min-height:44px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
 .legend-row{display:flex;align-items:center;gap:10px;min-height:34px;border-bottom:1px solid var(--line);font-size:14px}
@@ -161,10 +163,11 @@ textarea{width:100%;min-height:64px;padding:8px;border:1px solid var(--line);bac
       <button type="button" id="mToday" aria-pressed="true">Plekken voor vandaag</button>
       <button type="button" id="mAll" aria-pressed="false">Alle vondsten</button>
     </div>
+    <button type="button" class="omgbtn" id="mOmg" aria-pressed="true">Omgeving</button>
     <svg class="map" id="map" role="img" aria-label="Kaart van de Burnotvallei met je vindplaatsen"></svg>
     <div class="pick" id="pick">Tik een stip voor soort en datum.</div>
     <div id="legend"></div>
-    <p class="note" style="padding:12px 0 40px">Zwarte lijn: Route 1. Grijze lijnen: je wandelingen uit GPX.</p>
+    <p class="note" style="padding:12px 0 40px">Zwarte lijn: Route 1. Grijze lijnen: je wandelingen uit GPX. Symbolen: plekbeschrijvingen uit je foto's en notities; tik een vondst om de omgeving binnen 50 m te zien.</p>
   </div>
 </div>
 
@@ -429,6 +432,45 @@ window.addEventListener('hashchange',show);
 // ---------- kaart
 const KC={m:'var(--myc)',s:'var(--sap)',p:'var(--par)',o:'var(--grey)'};
 const KN={m:'Mycorrhiza',s:'Saprotroof',p:'Parasiet',o:'Onbepaald of slijmzwam'};
+// ---------- Omgevingslaag: plekbeschrijvingen als symbolen. Vorm = soort plek, lichte tint = boomsoort; vondsten blijven ronde stippen.
+const OS='stroke="var(--fg)" stroke-width="1.4"';
+const OSYM={
+  beuk:`<rect x="13" y="16" width="2" height="9" fill="var(--fg)"/><circle cx="14" cy="11" r="8" fill="#CFE3B4" ${OS}/>`,
+  eik:`<rect x="13" y="16" width="2" height="9" fill="var(--fg)"/><circle cx="14" cy="11" r="8" fill="#EBD3A2" ${OS}/>`,
+  berk:`<rect x="11" y="3" width="6" height="22" fill="#fff" ${OS}/><rect x="11" y="9" width="6" height="2" fill="var(--fg)"/><rect x="11" y="15" width="6" height="2" fill="var(--fg)"/><rect x="11" y="20" width="6" height="2" fill="var(--fg)"/>`,
+  naald:`<rect x="13" y="19" width="2" height="6" fill="var(--fg)"/><path d="M14 3 L22 20 H6 Z" fill="#B7CDBE" ${OS}/>`,
+  hakhout:`<rect x="9" y="17" width="1.6" height="8" fill="var(--fg)"/><rect x="17.4" y="17" width="1.6" height="8" fill="var(--fg)"/><circle cx="10" cy="13" r="5" fill="#DCE7B0" ${OS}/><circle cx="18" cy="13" r="5" fill="#DCE7B0" ${OS}/>`,
+  gemengd:`<rect x="13" y="16" width="2" height="9" fill="var(--fg)"/><path d="M14 3 A8 8 0 0 0 14 19 Z" fill="#CFE3B4"/><path d="M14 3 A8 8 0 0 1 14 19 Z" fill="#EBD3A2"/><circle cx="14" cy="11" r="8" fill="none" ${OS}/>`,
+  stam:`<rect x="3" y="14" width="22" height="7" rx="3.5" fill="#D9B98A" ${OS}/><circle cx="21.5" cy="17.5" r="2" fill="none" stroke="var(--fg)" stroke-width="1"/>`,
+  stronk:`<rect x="8" y="12" width="12" height="12" fill="#D9B98A" ${OS}/><ellipse cx="14" cy="12" rx="6" ry="2.2" fill="#F1E3C8" ${OS}/>`,
+  rots:`<path d="M3 23 L9 10 L15 16 L20 7 L25 23 Z" fill="#C9A096" ${OS}/>`,
+  gras:`<rect x="3" y="5" width="22" height="20" fill="var(--bg)"/><path d="M4 22h20M6 17h16M8 12h12" stroke="var(--fg)" stroke-width="1.8"/>`,
+  water:`<rect x="3" y="7" width="22" height="16" fill="var(--bg)"/><path d="M3 12 q3.7 -4 7.3 0 t7.3 0 t7.4 0 M3 19 q3.7 -4 7.3 0 t7.3 0 t7.4 0" fill="none" stroke="#2C6E9E" stroke-width="2"/>`,
+  uitzicht:`<path d="M14 23 L3 7 Q14 1 25 7 Z" fill="var(--bg)" ${OS}/><circle cx="14" cy="23" r="3" fill="var(--fg)"/>`,
+  dorp:`<rect x="6" y="12" width="16" height="12" fill="var(--bg)" ${OS}/><path d="M4 13 L14 4 L24 13" fill="none" stroke="var(--fg)" stroke-width="1.8"/>`
+};
+const ONAAM={beuk:'Beuk',eik:'Eik',berk:'Berk',naald:'Naaldhout',hakhout:'Hakhout',gemengd:'Gemengd bos',stam:'Liggende stam',stronk:'Stronk',rots:'Rots',gras:'Grasland',water:'Water',uitzicht:'Uitzicht',dorp:'Dorp / gebouw'};
+let OMG=[], omgOn=true;
+function omgLayer(P){
+  if(!omgOn) return '';
+  return OMG.map((o,i)=>{const [x,y]=P(o.lat,o.lon);return `<g data-o="${i}" transform="translate(${(x-8.4).toFixed(1)},${(y-8.4).toFixed(1)}) scale(.6)" style="cursor:pointer"><rect width="28" height="28" fill="transparent"/>${OSYM[o.type]||OSYM.gemengd}</g>`}).join('');
+}
+function omgNear(la,lo){let best=null,bd=50;const k=Math.cos(la*Math.PI/180);for(const o of OMG){const d=Math.hypot((o.lat-la)*111320,(o.lon-lo)*111320*k);if(d<bd){bd=d;best=o}}return best?{o:best,d:Math.round(bd)}:null}
+function omgText(o){return `${ONAAM[o.type]||'Plek'} · ${fmtD(parse(o.datum))} — ${o.zin}${o.kenmerken&&o.kenmerken.length?' ['+o.kenmerken.join(', ')+']':''}`}
+function omgLegend(lg){
+  if(!omgOn||!OMG.length) return;
+  const types=[...new Set(OMG.map(o=>o.type))];
+  for(const t of types){const n=OMG.filter(o=>o.type===t).length;const r=document.createElement('div');r.className='legend-row';
+    r.innerHTML=`<svg viewBox="0 0 28 28" width="16" height="16" style="flex-shrink:0">${OSYM[t]}</svg><span>${ONAAM[t]}</span><span class="c">${n}</span>`;lg.appendChild(r)}
+}
+function omgClick(e){
+  const g=e.target.closest('[data-o]'); if(g){$('pick').textContent=omgText(OMG[+g.dataset.o]);return true}
+  const c=e.target.closest('circle[data-k]'); if(!c) return true;
+  const [n,dt,la,lo]=c.dataset.k.split('|'); const nb=omgNear(+la,+lo);
+  $('pick').textContent=`${n} · ${fmtD(parse(dt))}`+(nb?` — omgeving (${nb.d} m): ${nb.o.zin}`:'');
+  return true;
+}
+
 function renderMap(){
   const b=FINDS.bbox, kx=Math.cos(50.356*Math.PI/180), Wd=350, sx=Wd/((b.e-b.w)*kx), Hd=Math.round((b.n-b.s)*sx);
   const P=(la,lo)=>[((lo-b.w)*kx*sx).toFixed(1),((b.n-la)*sx).toFixed(1)];
@@ -441,16 +483,18 @@ function renderMap(){
   const tracks=VISITS.map(v=>v.spoor).filter(Boolean).map(t=>`<polyline points="${t.pts.map(p=>P(p[0],p[1]).join(',')).join(' ')}" fill="none" stroke="var(--grey)" stroke-width="1.2" stroke-linejoin="round"/>`).join('');
   const mpp=((b.e-b.w)*111320*kx)/Wd, bar=100/mpp;
   svg.innerHTML=tracks+`<polyline points="${ROUTE.map(p=>P(p[0],p[1]).join(',')).join(' ')}" fill="none" stroke="var(--fg)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`+
-    pts.map(f=>{const [x,y]=P(f[0],f[1]);return `<circle cx="${x}" cy="${y}" r="${mapToday?4:(f[5]==='o'?2.2:3)}" fill="${KC[f[5]]}" data-k="${esc(f[3])}|${esc(f[2])}"/>`}).join('')+
+    pts.map(f=>{const [x,y]=P(f[0],f[1]);return `<circle cx="${x}" cy="${y}" r="${mapToday?4:(f[5]==='o'?2.2:3)}" fill="${KC[f[5]]}" data-k="${esc(f[3])}|${esc(f[2])}|${f[0]}|${f[1]}"/>`}).join('')+omgLayer(P)+
     `<line x1="12" y1="${Hd-12}" x2="${(12+bar).toFixed(1)}" y2="${Hd-12}" stroke="var(--fg)" stroke-width="2"/><text x="${(16+bar).toFixed(1)}" y="${Hd-9}" font-family="IBM Plex Mono, monospace" font-size="9" fill="var(--fg)">100 m</text>`+
     `<text x="${Wd-14}" y="16" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="var(--fg)">N</text><line x1="${Wd-14}" y1="20" x2="${Wd-14}" y2="32" stroke="var(--fg)" stroke-width="1.5"/>`;
   const spp=new Set(L.map(f=>f[4])).size;
   $('mapTitle').textContent=mapToday?`${L.length} plekken · ${spp} soorten`:`${L.length} vondsten`;
   const lg=$('legend'); lg.replaceChildren();
   for(const k of ['m','s','p','o']){const n=L.filter(f=>f[5]===k).length; if(!n) continue; const r=document.createElement('div'); r.className='legend-row'; r.innerHTML=`<span class="dot" style="background:${KC[k]}"></span><span>${KN[k]}</span><span class="c">${n}</span>`; lg.append(r)}
-  $('pick').textContent=mapToday?'Plekken waar je soorten vond die nu verwacht worden. Tik een stip voor soort en datum.':'Tik een stip voor soort en datum.';
+  omgLegend(lg);
+  $('pick').textContent=mapToday?'Plekken waar je soorten vond die nu verwacht worden. Tik een stip of symbool.':'Tik een stip of symbool.';
 }
-$('map').addEventListener('click',e=>{const c=e.target.closest('circle'); if(!c) return; const [n,dt]=c.dataset.k.split('|'); $('pick').textContent=`${n} · ${fmtD(parse(dt))}`});
+$('map').addEventListener('click',omgClick);
+$('mOmg').addEventListener('click',()=>{omgOn=!omgOn;$('mOmg').setAttribute('aria-pressed',String(omgOn));renderMap()});
 $('mToday').addEventListener('click',()=>{mapToday=true;renderMap()});
 $('mAll').addEventListener('click',()=>{mapToday=false;renderMap()});
 
@@ -486,7 +530,7 @@ $('wxBtn').addEventListener('click',()=>fetchWx(true));
     SP=D.species; FINDS=D.finds; ROUTE=D.route;
     W={start:parse(D.weather.start),fcFrom:parse(D.weather.fcFrom),...Object.fromEntries(KEYS.map(k=>[k,D.weather[k].slice()]))};
     const c=store.get(WXKEY,null); if(c&&c.start===D.weather.start&&c.rain.length>=W.rain.length){KEYS.forEach(k=>W[k]=c[k]);W.fcFrom=parse(c.fcFrom)}
-    VISITS=D.bezoeken||[];
+    VISITS=D.bezoeken||[]; OMG=D.omgeving||[];
   }catch(e){$('state').textContent='Laden mislukt. Open de app één keer met bereik.';return}
   render(); show(); fetchWx(false);
   try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
